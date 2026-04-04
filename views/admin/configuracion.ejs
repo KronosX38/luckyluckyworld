@@ -1,0 +1,114 @@
+<%- include('partials/header') %>
+
+<div style="max-width:700px;">
+
+  <div class="table-wrap" style="padding:2rem; margin-bottom:1.5rem;">
+    <div class="table-title" style="margin-bottom:1.5rem;">⚙️ Configuración del sistema</div>
+
+    <form id="formConfig">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Comisión Stripe (%)</label>
+          <input type="number" name="stripe_fee_pct" class="form-input"
+            value="<%= config.stripe_fee_pct %>" step="0.01" min="0" max="100">
+          <small style="color:#aaa; font-size:0.75rem;">Porcentaje que cobra Stripe por transacción</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Minutos de reserva</label>
+          <input type="number" name="reserva_minutos" class="form-input"
+            value="<%= config.reserva_minutos %>" min="1" max="60">
+          <small style="color:#aaa; font-size:0.75rem;">Tiempo antes de liberar boletos en carrito</small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Límite cuadrícula de boletos</label>
+          <input type="number" name="cuadricula_limite" class="form-input"
+            value="<%= config.cuadricula_limite %>" min="100">
+          <small style="color:#aaa; font-size:0.75rem;">Máximo de boletos para mostrar cuadrícula visual</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Máx. boletos por carrito</label>
+          <input type="number" name="max_boletos_carrito" class="form-input"
+            value="<%= config.max_boletos_carrito %>" min="1" max="100">
+          <small style="color:#aaa; font-size:0.75rem;">Máximo de boletos por transacción</small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Máx. sorteos activos</label>
+          <input type="number" name="max_sorteos_activos" class="form-input"
+            value="<%= config.max_sorteos_activos %>" min="1" max="10">
+          <small style="color:#aaa; font-size:0.75rem;">Sorteos simultáneos permitidos</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Folio SEGOB</label>
+          <input type="text" name="folio_segob" class="form-input"
+            value="<%= config.folio_segob || '' %>"
+            placeholder="SEGOB-2026-001">
+          <small style="color:#aaa; font-size:0.75rem;">Aparece visible en el sitio público</small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Correo remitente</label>
+          <input type="email" name="correo_remitente" class="form-input"
+            value="<%= config.correo_remitente || '' %>"
+            placeholder="noreply@tudominio.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">WhatsApp de contacto</label>
+          <input type="text" name="whatsapp_numero" class="form-input"
+            value="<%= config.whatsapp_numero || '' %>"
+            placeholder="529991234567">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+        <button type="submit" class="btn btn-gold">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+const token = localStorage.getItem('admin_token');
+
+document.getElementById('formConfig').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type="submit"]');
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+
+  const res = await fetch('/api/admin/configuracion', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+
+  btn.textContent = '💾 Guardar cambios';
+  btn.disabled = false;
+
+  if (result.ok) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success';
+    alert.textContent = '✅ Configuración guardada correctamente';
+    e.target.insertAdjacentElement('beforebegin', alert);
+    setTimeout(() => alert.remove(), 3000);
+  } else {
+    alert('❌ ' + result.error);
+  }
+});
+</script>
+
+<%- include('partials/footer') %>

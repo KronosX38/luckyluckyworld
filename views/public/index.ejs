@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lucky Lucky World — Sorteos en línea</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/public.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="pub-nav">
+    <div class="pub-nav-inner">
+      <div class="pub-brand">
+        <span class="pub-brand-icon">🎟️</span>
+        <span class="pub-brand-name">Lucky Lucky World</span>
+      </div>
+      <div class="pub-nav-right">
+        <% if (folio_segob) { %>
+          <span class="pub-segob">Permiso SEGOB: <%= folio_segob %></span>
+        <% } %>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="pub-hero">
+    <div class="pub-hero-content">
+      <div class="pub-hero-eyebrow">🎰 Sorteos en línea</div>
+      <h1>Tu próxima <span>gran suerte</span><br>está aquí</h1>
+      <p>Elige tus números, paga de forma segura y espera el sorteo en vivo. Transparente, seguro y emocionante.</p>
+    </div>
+  </section>
+
+  <!-- SORTEOS ACTIVOS -->
+  <section class="pub-section">
+    <div class="pub-container">
+
+      <% if (sorteos.length === 0) { %>
+        <div class="pub-empty">
+          <div class="pub-empty-icon">🎟️</div>
+          <h3>No hay sorteos activos en este momento</h3>
+          <p>Vuelve pronto — ¡los próximos sorteos se anunciarán aquí!</p>
+        </div>
+      <% } else { %>
+
+        <% sorteos.forEach(sorteo => { %>
+          <div class="pub-sorteo-card" id="sorteo-<%= sorteo.id %>">
+
+            <!-- CABECERA DEL SORTEO -->
+            <div class="pub-sorteo-header">
+              <div>
+                <h2 class="pub-sorteo-title"><%= sorteo.nombre %></h2>
+                <% if (sorteo.descripcion) { %>
+                  <p class="pub-sorteo-desc"><%= sorteo.descripcion %></p>
+                <% } %>
+              </div>
+              <div class="pub-sorteo-meta">
+                <div class="pub-price">
+                  <span class="pub-price-label">Precio por boleto</span>
+                  <span class="pub-price-value">$<%= sorteo.precio_boleto %> <small><%= sorteo.moneda %></small></span>
+                </div>
+                <% if (sorteo.fecha_sorteo) { %>
+                  <div class="pub-fecha">
+                    <i class="fa-solid fa-calendar"></i>
+                    <%= new Date(sorteo.fecha_sorteo).toLocaleDateString('es-MX', {
+                      weekday:'long', year:'numeric', month:'long', day:'numeric'
+                    }) %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- PREMIO -->
+            <% if (sorteo.premio_descripcion) { %>
+              <div class="pub-premio">
+                <span class="pub-premio-label">🏆 Premio</span>
+                <span class="pub-premio-desc"><%= sorteo.premio_descripcion %></span>
+                <% if (sorteo.premio_monto) { %>
+                  <span class="pub-premio-monto">
+                    $<%= Number(sorteo.premio_monto).toLocaleString('es-MX') %> <%= sorteo.premio_moneda %>
+                  </span>
+                <% } %>
+              </div>
+            <% } %>
+
+            <!-- YOUTUBE LIVE -->
+            <% if (sorteo.youtube_link) { %>
+              <div class="pub-youtube">
+                <div class="pub-youtube-badge">
+                  <i class="fa-brands fa-youtube"></i> EN VIVO
+                </div>
+                <a href="<%= sorteo.youtube_link %>" target="_blank" class="pub-youtube-link">
+                  Ver sorteo en vivo <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+              </div>
+            <% } %>
+
+            <!-- SELECCIÓN DE BOLETOS -->
+            <div class="pub-boletos-section" data-sorteo="<%= sorteo.id %>">
+
+              <!-- BARRA DE PROGRESO -->
+              <div class="pub-progress-wrap">
+                <div class="pub-progress-labels">
+                  <span class="pub-progress-label">Boletos vendidos</span>
+                  <span class="pub-progress-pct" id="pct-<%= sorteo.id %>">0%</span>
+                </div>
+                <div class="pub-progress-bar">
+                  <div class="pub-progress-fill" id="fill-<%= sorteo.id %>" style="width:0%"></div>
+                </div>
+                <div class="pub-progress-stats">
+                  <span id="vendidos-<%= sorteo.id %>">0 vendidos</span>
+                  <span id="disponibles-<%= sorteo.id %>">cargando...</span>
+                </div>
+              </div>
+
+              <!-- CONTROLES -->
+              <div class="pub-controles">
+                <button class="pub-btn-aleatorio"
+                  onclick="agregarAleatorio(<%= sorteo.id %>)">
+                  🎲 Número aleatorio
+                </button>
+                <div class="pub-buscador" id="buscador-<%= sorteo.id %>" style="display:none;">
+                  <input type="number" class="pub-buscar-input"
+                    id="buscar-input-<%= sorteo.id %>"
+                    placeholder="Buscar número...">
+                  <button class="pub-buscar-btn"
+                    onclick="buscarBoleto(<%= sorteo.id %>)">
+                    Buscar
+                  </button>
+                </div>
+              </div>
+
+              <!-- CUADRÍCULA (sorteos pequeños) -->
+              <div class="pub-cuadricula" id="cuadricula-<%= sorteo.id %>">
+                <div class="pub-loading">
+                  <i class="fa-solid fa-spinner fa-spin"></i> Cargando boletos...
+                </div>
+              </div>
+
+              <!-- CARRITO -->
+              <div class="pub-carrito" id="carrito-<%= sorteo.id %>">
+                <div class="pub-carrito-header">
+                  <span>🛒 Tu selección</span>
+                  <button class="pub-carrito-limpiar"
+                    onclick="limpiarCarrito(<%= sorteo.id %>)">
+                    Limpiar
+                  </button>
+                </div>
+                <div class="pub-carrito-boletos" id="carrito-boletos-<%= sorteo.id %>">
+                  <p class="pub-carrito-empty">No has seleccionado ningún boleto</p>
+                </div>
+                <div class="pub-carrito-footer">
+                  <div class="pub-carrito-total">
+                    Total: <strong id="carrito-total-<%= sorteo.id %>">$0.00</strong>
+                  </div>
+                  <button class="pub-btn-pagar"
+                    id="btn-pagar-<%= sorteo.id %>"
+                    onclick="procederPago(<%= sorteo.id %>, <%= sorteo.precio_boleto %>, '<%= sorteo.moneda %>')">
+                    Proceder al pago
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        <% }) %>
+
+      <% } %>
+    </div>
+  </section>
+
+  <!-- MODAL DE PAGO -->
+  <div class="pub-modal-overlay" id="modalPago">
+    <div class="pub-modal">
+      <div class="pub-modal-header">
+        <h3>💳 Datos de contacto</h3>
+        <button class="pub-modal-close" onclick="cerrarModalPago()">✕</button>
+      </div>
+      <p style="color:#aaa; font-size:0.85rem; margin-bottom:1.5rem;">
+        Completa tus datos para continuar. Recibirás tu PIN por correo al confirmar el pago.
+      </p>
+      <div class="pub-form-group">
+        <label class="pub-form-label">Nombre completo</label>
+        <input type="text" id="pago-nombre" class="pub-form-input" placeholder="Tu nombre completo">
+      </div>
+      <div class="pub-form-group">
+        <label class="pub-form-label">Correo electrónico</label>
+        <input type="email" id="pago-email" class="pub-form-input" placeholder="tucorreo@email.com">
+      </div>
+      <div class="pub-form-group">
+        <label class="pub-form-label">Teléfono (opcional)</label>
+        <input type="tel" id="pago-telefono" class="pub-form-input" placeholder="Tu número de teléfono">
+      </div>
+      <div class="pub-form-group">
+        <label class="pub-form-label">Método de pago</label>
+        <select id="pago-metodo" class="pub-form-input">
+          <option value="tarjeta">💳 Tarjeta de crédito / débito</option>
+          <option value="oxxo">🏪 OXXO Pay</option>
+        </select>
+      </div>
+      <div id="pago-resumen" style="margin:1rem 0;"></div>
+      <button class="pub-btn-confirmar" onclick="confirmarPago()">
+        <i class="fa-solid fa-lock"></i> Confirmar y pagar
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="pub-footer">
+    <div class="pub-container">
+      <div class="pub-footer-brand">🎟️ Lucky Lucky World</div>
+      <p class="pub-footer-segob">
+        <% if (folio_segob) { %>
+          Permiso SEGOB: <%= folio_segob %> —
+        <% } %>
+        Sorteos en línea seguros y transparentes
+      </p>
+      <p class="pub-footer-copy">© 2026 Lucky Lucky World. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    const STRIPE_PUBLIC_KEY = '<%= stripe_public_key %>';
+    const stripe = Stripe(STRIPE_PUBLIC_KEY);
+  </script>
+  <script src="/js/public.js"></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<%- include('partials/header') %>
+
+<!-- MODAL REGISTRAR GANADOR -->
+<div class="modal-overlay" id="modalGanador">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🏆 Registrar Ganador</span>
+      <button class="modal-close">✕</button>
+    </div>
+    <form id="formGanador">
+      <div class="form-group">
+        <label class="form-label">Sorteo</label>
+        <select name="sorteo_id" class="form-select" required>
+          <option value="">Selecciona un sorteo</option>
+          <% sorteos.filter(s => s.estado === 'cerrado' || s.estado === 'activo').forEach(s => { %>
+            <option value="<%= s.id %>"><%= s.nombre %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Número de boleto ganador</label>
+        <input type="text" name="numero_boleto" class="form-input"
+          required placeholder="Ej: 042">
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+        <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-gold">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ENCABEZADO -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+  <p style="color:#aaa; font-size:0.85rem;"><%= ganadores.length %> ganador(es) registrado(s)</p>
+  <button class="btn btn-gold" onclick="openModal('modalGanador')">
+    <i class="fa-solid fa-plus"></i> Registrar ganador
+  </button>
+</div>
+
+<!-- TABLA -->
+<div class="table-wrap">
+  <div class="table-header">
+    <span class="table-title">🏆 Ganadores</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Sorteo</th>
+        <th>Boleto</th>
+        <th>Ganador</th>
+        <th>Contacto</th>
+        <th>PIN</th>
+        <th>Premio</th>
+        <th>Notificado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (ganadores.length === 0) { %>
+        <tr>
+          <td colspan="8" style="text-align:center; color:#aaa; padding:2rem;">
+            No hay ganadores registrados
+          </td>
+        </tr>
+      <% } else { %>
+        <% ganadores.forEach(g => { %>
+          <tr>
+            <td><%= g.sorteo_nombre %></td>
+            <td><strong><%= g.boleto_numero %></strong></td>
+            <td><%= g.comprador_nombre %></td>
+            <td>
+              <%= g.email %><br>
+              <small style="color:#aaa;"><%= g.telefono || '' %></small>
+            </td>
+            <td>
+              <code style="background:#f5f5f5; padding:2px 8px; border-radius:4px;">
+                <%= g.pin %>
+              </code>
+            </td>
+            <td>
+              <span class="badge <%= g.premio_entregado ? 'badge-vendido' : 'badge-reservado' %>">
+                <%= g.premio_entregado ? '✅ Entregado' : '⏳ Pendiente' %>
+              </span>
+            </td>
+            <td>
+              <div style="display:flex; gap:0.3rem; flex-direction:column;">
+                <span style="font-size:0.75rem;">
+                  📧 <%= g.notificado_email ? '✅' : '❌' %>
+                  WhatsApp <%= g.notificado_wa ? '✅' : '❌' %>
+                </span>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm"
+                  onclick="notificar(<%= g.id %>, 'email', '<%= g.email %>')">
+                  📧
+                </button>
+                <button class="btn btn-success btn-sm"
+                  onclick="notificar(<%= g.id %>, 'wa', '<%= g.telefono %>')">
+                  💬
+                </button>
+                <% if (!g.premio_entregado) { %>
+                  <button class="btn btn-gold btn-sm"
+                    onclick="marcarEntregado(<%= g.id %>)">
+                    ✅
+                  </button>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const token = localStorage.getItem('admin_token');
+
+// Registrar ganador
+document.getElementById('formGanador').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  const btn = e.target.querySelector('[type="submit"]');
+  btn.textContent = 'Registrando...';
+  btn.disabled = true;
+
+  // Buscar boleto ganador
+  const res = await fetch(`/api/sorteos/${data.sorteo_id}/boletos/verificar-pin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ numero: data.numero_boleto })
+  });
+
+  const result = await res.json();
+  if (result.ok) {
+    alert('✅ Ganador registrado correctamente');
+    window.location.reload();
+  } else {
+    alert('❌ ' + (result.error || 'Error registrando ganador'));
+    btn.textContent = 'Registrar';
+    btn.disabled = false;
+  }
+});
+
+// Notificar ganador
+async function notificar(id, tipo, contacto) {
+  if (!contacto || contacto === 'null') {
+    alert('❌ No hay datos de contacto registrados');
+    return;
+  }
+  if (tipo === 'wa') {
+    window.open(`https://wa.me/${contacto}`, '_blank');
+  } else {
+    alert('📧 Correo enviado a ' + contacto);
+  }
+}
+
+// Marcar premio entregado
+async function marcarEntregado(id) {
+  if (!confirm('¿Confirmar que el premio fue entregado?')) return;
+  const res = await fetch(`/api/ganadores/${id}/entregado`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const result = await res.json();
+  if (result.ok) {
+    alert('✅ Premio marcado como entregado');
+    window.location.reload();
+  } else {
+    alert('❌ ' + result.error);
+  }
+}
+
+document.querySelectorAll('.modal-close').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.closest('.modal-overlay')?.classList.remove('open');
+  });
+});
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,75 @@
+<%- include('partials/header') %>
+
+<%
+const formatNum = (n) => Number(n || 0).toLocaleString('es-MX');
+%>
+
+<!-- CARDS -->
+<div class="cards-grid">
+  <div class="card">
+    <div class="card-label">Sorteos activos</div>
+    <div class="card-value"><%= activos.length %></div>
+    <div class="card-sub">de <%= sorteos.length %> totales</div>
+  </div>
+  <div class="card success">
+    <div class="card-label">Boletos vendidos</div>
+    <div class="card-value"><%= stats.total_vendidos || 0 %></div>
+    <div class="card-sub">en todos los sorteos</div>
+  </div>
+  <div class="card teal">
+    <div class="card-label">Compradores únicos</div>
+    <div class="card-value"><%= stats.total_compradores || 0 %></div>
+    <div class="card-sub">participantes registrados</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Ingresos netos</div>
+    <div class="card-value"><small>$</small><%= formatNum(ganancias.neto) %></div>
+    <div class="card-sub">después de comisión Stripe</div>
+  </div>
+</div>
+
+<!-- SORTEOS ACTIVOS -->
+<div class="table-wrap">
+  <div class="table-header">
+    <span class="table-title">🎟️ Sorteos activos</span>
+    <a href="/admin/sorteos" class="btn btn-primary btn-sm">Ver todos</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Rango boletos</th>
+        <th>Precio</th>
+        <th>Fecha sorteo</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (activos.length === 0) { %>
+        <tr>
+          <td colspan="6" style="text-align:center; color:#aaa; padding:2rem;">
+            No hay sorteos activos
+          </td>
+        </tr>
+      <% } else { %>
+        <% activos.forEach(s => { %>
+          <tr>
+            <td><strong><%= s.nombre %></strong></td>
+            <td><%= s.boleto_inicio %> — <%= s.boleto_fin %></td>
+            <td>$<%= s.precio_boleto %> <%= s.moneda %></td>
+            <td><%= s.fecha_sorteo ? new Date(s.fecha_sorteo).toLocaleDateString('es-MX') : '—' %></td>
+            <td><span class="badge badge-activo">Activo</span></td>
+            <td>
+              <a href="/admin/sorteos/<%= s.id %>" class="btn btn-outline btn-sm">
+                Ver detalle
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('partials/footer') %>

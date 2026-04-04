@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión — Panel Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="login-body">
+  <div class="login-page">
+
+    <div class="login-box">
+
+      <!-- Avatar / Logo -->
+      <div class="login-avatar">
+        <div class="avatar-circle">
+          🎟️
+          <!-- Cuando tengan el logo:
+          <img src="/img/logo.png" alt="Lucky Lucky World">
+          -->
+        </div>
+      </div>
+
+      <!-- Título -->
+      <div class="login-logo">
+        <h1><span>Lucky Lucky World</span></h1>
+        <p>Panel de Administración</p>
+      </div>
+
+      <!-- Error -->
+      <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <!-- Formulario -->
+      <form id="loginForm">
+        <div class="form-group login-field">
+          <span class="field-icon">✉️</span>
+          <input type="email" id="email" class="form-input login-input"
+            placeholder="Correo electrónico" required>
+        </div>
+        <div class="form-group login-field">
+          <span class="field-icon">🔒</span>
+          <input type="password" id="password" class="form-input login-input"
+            placeholder="Contraseña" required>
+        </div>
+        <button type="submit" class="btn-login">
+          Iniciar sesión
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('.btn-login');
+      btn.textContent = 'Verificando...';
+      btn.disabled = true;
+
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:    document.getElementById('email').value,
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        localStorage.setItem('admin_token', data.token);
+        localStorage.setItem('admin_user', JSON.stringify(data.usuario));
+        btn.textContent = '¡Bienvenido! 🎉';
+        setTimeout(() => window.location.href = '/admin/dashboard', 600);
+      } else {
+        btn.textContent = 'Iniciar sesión';
+        btn.disabled = false;
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger';
+        alert.textContent = data.error || 'Credenciales incorrectas';
+        e.target.insertAdjacentElement('beforebegin', alert);
+        setTimeout(() => alert.remove(), 3000);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<%- include('partials/header') %>
+
+<!-- MODAL CREAR SORTEO -->
+<div class="modal-overlay" id="modalCrear">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🎟️ Nuevo Sorteo</span>
+      <button class="modal-close">✕</button>
+    </div>
+    <form id="formCrear">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre del sorteo</label>
+          <input type="text" name="nombre" class="form-input" required placeholder="Ej: Sorteo Navideño">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha del sorteo</label>
+          <input type="datetime-local" name="fecha_sorteo" class="form-input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea name="descripcion" class="form-textarea" placeholder="Descripción del sorteo..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Boleto inicio</label>
+          <input type="number" name="boleto_inicio" class="form-input" required placeholder="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Boleto fin</label>
+          <input type="number" name="boleto_fin" class="form-input" required placeholder="100">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Precio por boleto</label>
+          <input type="number" name="precio_boleto" class="form-input" required placeholder="150" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Moneda</label>
+          <select name="moneda" class="form-select">
+            <option value="MXN">MXN — Peso mexicano</option>
+            <option value="USD">USD — Dólar americano</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Descripción del premio</label>
+          <input type="text" name="premio_descripcion" class="form-input" placeholder="Ej: iPhone 15 Pro">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto del premio</label>
+          <input type="number" name="premio_monto" class="form-input" placeholder="25000" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Moneda del premio</label>
+          <select name="premio_moneda" class="form-select">
+            <option value="MXN">MXN</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Folio SEGOB</label>
+          <input type="text" name="folio_segob" class="form-input" placeholder="SEGOB-2026-001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link de YouTube Live</label>
+        <input type="text" name="youtube_link" class="form-input" placeholder="https://youtube.com/watch?v=...">
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+        <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-gold">Crear sorteo</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ENCABEZADO -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+  <div>
+    <p style="color:#aaa; font-size:0.85rem;"><%= sorteos.length %> sorteo(s) registrados</p>
+  </div>
+  <button class="btn btn-gold" onclick="openModal('modalCrear')">
+    <i class="fa-solid fa-plus"></i> Nuevo sorteo
+  </button>
+</div>
+
+<!-- TABLA -->
+<div class="table-wrap">
+  <div class="table-header">
+    <span class="table-title">🎟️ Todos los sorteos</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Boletos</th>
+        <th>Precio</th>
+        <th>Premio</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (sorteos.length === 0) { %>
+        <tr>
+          <td colspan="8" style="text-align:center; color:#aaa; padding:2rem;">
+            No hay sorteos registrados
+          </td>
+        </tr>
+      <% } else { %>
+        <% sorteos.forEach(s => { %>
+          <tr>
+            <td><%= s.id %></td>
+            <td>
+              <strong><%= s.nombre %></strong><br>
+              <small style="color:#aaa;"><%= s.creado_por %></small>
+            </td>
+            <td><%= s.boleto_inicio %> — <%= s.boleto_fin %></td>
+            <td>$<%= s.precio_boleto %> <%= s.moneda %></td>
+            <td>
+              <% if (s.premio_descripcion) { %>
+                <%= s.premio_descripcion %><br>
+                <small style="color:#aaa;">$<%= s.premio_monto %> <%= s.premio_moneda %></small>
+              <% } else { %>
+                <span style="color:#aaa;">—</span>
+              <% } %>
+            </td>
+            <td><%= s.fecha_sorteo ? new Date(s.fecha_sorteo).toLocaleDateString('es-MX') : '—' %></td>
+            <td><span class="badge badge-<%= s.estado %>"><%= s.estado %></span></td>
+            <td>
+              <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                <a href="/admin/sorteos/<%= s.id %>" class="btn btn-outline btn-sm">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+                <% if (s.estado === 'borrador') { %>
+                  <button class="btn btn-success btn-sm" onclick="activarSorteo(<%= s.id %>)">
+                    <i class="fa-solid fa-play"></i> Activar
+                  </button>
+                <% } %>
+                <% if (s.estado === 'activo') { %>
+                  <button class="btn btn-danger btn-sm" onclick="cerrarSorteo(<%= s.id %>)">
+                    <i class="fa-solid fa-stop"></i> Cerrar
+                  </button>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const token = localStorage.getItem('admin_token');
+
+// Crear sorteo
+document.getElementById('formCrear').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type="submit"]');
+  btn.textContent = 'Creando...';
+  btn.disabled = true;
+
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+
+  const res = await fetch('/api/sorteos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+
+  if (result.ok) {
+    alert('✅ Sorteo creado correctamente');
+    window.location.reload();
+  } else {
+    alert('❌ ' + result.error);
+    btn.textContent = 'Crear sorteo';
+    btn.disabled = false;
+  }
+});
+
+// Activar sorteo
+async function activarSorteo(id) {
+  if (!confirm('¿Activar este sorteo? Se generarán todos los boletos automáticamente.')) return;
+  const res = await fetch(`/api/sorteos/${id}/activar`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const result = await res.json();
+  if (result.ok) {
+    alert('✅ ' + result.mensaje);
+    window.location.reload();
+  } else {
+    alert('❌ ' + result.error);
+  }
+}
+
+// Cerrar sorteo
+async function cerrarSorteo(id) {
+  if (!confirm('¿Cerrar este sorteo? Los boletos no vendidos quedarán cancelados.')) return;
+  const res = await fetch(`/api/sorteos/${id}/cerrar`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const result = await res.json();
+  if (result.ok) {
+    alert('✅ Sorteo cerrado correctamente');
+    window.location.reload();
+  } else {
+    alert('❌ ' + result.error);
+  }
+}
+
+// Cerrar modales
+document.querySelectorAll('.modal-close').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.closest('.modal-overlay')?.classList.remove('open');
+  });
+});
+</script>
+
+<%- include('partials/footer') %>

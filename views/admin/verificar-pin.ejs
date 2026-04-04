@@ -1,0 +1,96 @@
+<%- include('partials/header') %>
+
+<div style="max-width:500px; margin:0 auto;">
+  <div class="table-wrap" style="padding:2rem;">
+    <div class="table-title" style="margin-bottom:1.5rem; font-size:1.1rem;">
+      🔐 Verificar PIN del ganador
+    </div>
+    <p style="color:#aaa; font-size:0.88rem; margin-bottom:1.5rem;">
+      Ingresa el número de sorteo y el PIN del participante para verificar si es ganador.
+    </p>
+
+    <div class="form-group">
+      <label class="form-label">Selecciona el sorteo</label>
+      <select id="sorteoSelect" class="form-select">
+        <option value="">— Selecciona —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">PIN del participante</label>
+      <input type="text" id="pinInput" class="form-input"
+        placeholder="Ej: A1B2C3D4E5"
+        style="text-transform:uppercase; letter-spacing:0.1em;">
+    </div>
+    <button class="btn btn-primary" style="width:100%;" onclick="verificarPIN()">
+      <i class="fa-solid fa-shield-check"></i> Verificar PIN
+    </button>
+
+    <!-- RESULTADO -->
+    <div id="resultado" style="margin-top:1.5rem; display:none;"></div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('admin_token');
+
+// Cargar sorteos
+async function cargarSorteos() {
+  const res = await fetch('/api/sorteos', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await res.json();
+  const select = document.getElementById('sorteoSelect');
+  if (data.sorteos) {
+    data.sorteos.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.nombre;
+      select.appendChild(opt);
+    });
+  }
+}
+cargarSorteos();
+
+// Verificar PIN
+async function verificarPIN() {
+  const sorteoId = document.getElementById('sorteoSelect').value;
+  const pin      = document.getElementById('pinInput').value.trim().toUpperCase();
+  const resultado = document.getElementById('resultado');
+
+  if (!sorteoId || !pin) {
+    alert('Por favor selecciona el sorteo e ingresa el PIN');
+    return;
+  }
+
+  const res = await fetch(`/api/sorteos/${sorteoId}/boletos/verificar-pin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ pin })
+  });
+  const data = await res.json();
+  resultado.style.display = 'block';
+
+  if (data.ok) {
+    resultado.innerHTML = `
+      <div class="alert alert-success">
+        <strong>✅ PIN válido — Boleto ganador verificado</strong><br><br>
+        🎟️ <strong>Boleto:</strong> ${data.boleto}<br>
+        👤 <strong>Nombre:</strong> ${data.comprador.nombre}<br>
+        📧 <strong>Correo:</strong> ${data.comprador.email}<br>
+        📱 <strong>Teléfono:</strong> ${data.comprador.telefono || '—'}
+      </div>
+    `;
+  } else {
+    resultado.innerHTML = `
+      <div class="alert alert-danger">
+        ❌ PIN inválido o no corresponde a este sorteo
+      </div>
+    `;
+  }
+}
+</script>
+
+<%- include('partials/footer') %>
