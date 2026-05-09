@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    <%= sorteo.nombre %> — Lucky Lucky World
+  </title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/public.css">
+
+  <style>
+    .pub-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 27, 62, 0.6);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .pub-modal-overlay.open {
+      display: flex;
+    }
+
+    .pub-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .pub-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .pub-modal-header h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .pub-modal-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #aaa;
+    }
+
+    .pub-form-group {
+      margin-bottom: 1rem;
+    }
+
+    .pub-form-label {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #1B4332;
+      font-weight: 500;
+      margin-bottom: 0.4rem;
+    }
+
+    .pub-form-input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .pub-form-input:focus {
+      border-color: #C9A84C;
+    }
+
+    .pub-btn-confirmar {
+      width: 100%;
+      padding: 0.9rem;
+      background: #3ecf8e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .pub-btn-confirmar:hover {
+      background: #34b87d;
+    }
+
+    .pub-btn-confirmar:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <%- include('partials/nav') %>
+
+    <!-- HEADER DEL SORTEO -->
+    <section class="pub-sorteo-hero">
+      <div class="pub-container">
+        <a href="/sorteos" class="pub-back">
+          <i class="fa-solid fa-arrow-left"></i> Volver a sorteos
+        </a>
+        <div class="pub-sorteo-hero-inner">
+
+          <!-- Info principal -->
+          <div class="pub-sorteo-hero-info">
+            <div class="pub-eyebrow" style="color:var(--gold2);">
+              <i class="fa-solid fa-circle-dot" style="color:#3ecf8e;"></i> Sorteo activo
+            </div>
+            <h1>
+              <%= sorteo.nombre %>
+            </h1>
+            <% if (sorteo.descripcion) { %>
+              <p class="pub-sorteo-desc">
+                <%= sorteo.descripcion %>
+              </p>
+              <% } %>
+
+                <div class="pub-sorteo-hero-meta">
+                  <div class="pub-meta-item">
+                    <span class="pub-meta-label">Precio por boleto</span>
+                    <span class="pub-meta-val">$<%= sorteo.precio_boleto %> <small>
+                          <%= sorteo.moneda %>
+                        </small></span>
+                  </div>
+                  <% if (sorteo.premio_descripcion) { %>
+                    <div class="pub-meta-item">
+                      <span class="pub-meta-label">Premio</span>
+                      <span class="pub-meta-val" style="font-size:1rem;">🏆 <%= sorteo.premio_descripcion %></span>
+                    </div>
+                    <% } %>
+                      <% if (sorteo.premio_monto) { %>
+                        <div class="pub-meta-item">
+                          <span class="pub-meta-label">Valor del premio</span>
+                          <span class="pub-meta-val">$<%= Number(sorteo.premio_monto).toLocaleString('es-MX') %>
+                              <%= sorteo.premio_moneda %></span>
+                        </div>
+                        <% } %>
+                          <% if (sorteo.fecha_sorteo) { %>
+                            <div class="pub-meta-item">
+                              <span class="pub-meta-label">Fecha del sorteo</span>
+                              <span class="pub-meta-val" style="font-size:1rem;">
+                                📅 <%= new Date(sorteo.fecha_sorteo).toLocaleDateString('es-MX', {weekday:'long',
+                                  year:'numeric', month:'long', day:'numeric'}) %>
+                              </span>
+                            </div>
+                            <% } %>
+                              <% if (sorteo.folio_segob) { %>
+                                <div class="pub-meta-item">
+                                  <span class="pub-meta-label">Permiso SEGOB</span>
+                                  <span class="pub-meta-val" style="font-size:0.9rem;">
+                                    <%= sorteo.folio_segob %>
+                                  </span>
+                                </div>
+                                <% } %>
+                </div>
+          </div>
+
+          <!-- Imagen del premio -->
+          <div class="pub-sorteo-hero-img">
+            <% if (sorteo.imagen_url) { %>
+              <img src="<%= sorteo.imagen_url %>" alt="<%= sorteo.nombre %>">
+              <% } else { %>
+                <div class="pub-sorteo-img-placeholder">
+                  <i class="fa-solid fa-gift"></i>
+                </div>
+                <% } %>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- YOUTUBE LIVE -->
+    <% if (sorteo.youtube_link) { %>
+      <div class="pub-youtube-bar">
+        <div class="pub-container" style="display:flex; align-items:center; gap:1rem;">
+          <div class="pub-yt-badge">
+            <i class="fa-brands fa-youtube"></i> EN VIVO
+          </div>
+          <span style="color:var(--white); font-size:0.88rem;">El sorteo se transmitirá en vivo</span>
+          <a href="<%= sorteo.youtube_link %>" target="_blank" class="pub-yt-link">
+            Ver transmisión <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+      </div>
+      <% } %>
+
+          <!-- VENTAS CERRADAS -->
+        <% if (ventasCerradas) { %>
+          <div class="pub-ventas-cerradas">
+            <div class="pub-container">
+              <div class="pub-cerradas-inner">
+                <div class="pub-cerradas-icon">🔒</div>
+                <div>
+                  <h3>Ventas cerradas</h3>
+                  <p>
+                    <% if (minutosRestantes> 0) { %>
+                      El sorteo comienza en menos de <strong>
+                        <%= minutosRestantes %> minuto(s)
+                      </strong>.
+                      Ya no es posible adquirir boletos.
+                      <% } else { %>
+                        El sorteo está por comenzar. Ya no es posible adquirir boletos.
+                        <% } %>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <% } %>
+
+            <!-- SECCIÓN DE BOLETOS -->
+            <section class="pub-section">
+
+              <% if (!ventasCerradas) { %>
+                <section class="pub-section">
+                  <!-- todo el contenido de boletos y carrito -->
+                </section>
+                <% } else { %>
+                  <section class="pub-section">
+                    <div class="pub-container">
+                      <div class="pub-empty">
+                        <div class="pub-empty-icon">⏰</div>
+                        <h3>Las ventas han cerrado</h3>
+                        <p>¡Gracias por tu interés! Mantente pendiente de nuestros próximos sorteos.</p>
+                        <a href="/sorteos" class="pub-btn-primary" style="display:inline-flex; margin-top:1.5rem;">
+                          Ver otros sorteos <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                      </div>
+                    </div>
+                  </section>
+                  <% } %>
+
+                    <div class="pub-container">
+
+                      <!-- Mini guía -->
+                      <div class="pub-mini-guide">
+                        <div class="pub-guide-step">
+                          <span class="pub-guide-num">1</span>
+                          <span>Elige tus números</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right pub-guide-arrow"></i>
+                        <div class="pub-guide-step">
+                          <span class="pub-guide-num">2</span>
+                          <span>Agrégalos al carrito</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right pub-guide-arrow"></i>
+                        <div class="pub-guide-step">
+                          <span class="pub-guide-num">3</span>
+                          <span>Procede al pago</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right pub-guide-arrow"></i>
+                        <div class="pub-guide-step">
+                          <span class="pub-guide-num">4</span>
+                          <span>Recibe tu PIN por correo</span>
+                        </div>
+                      </div>
+
+                      <div class="pub-boletos-wrap" data-sorteo="<%= sorteo.id %>">
+
+                        <!-- Barra de progreso -->
+                        <div class="pub-progress-wrap">
+                          <div class="pub-progress-labels">
+                            <span class="pub-progress-label">Boletos vendidos</span>
+                            <span class="pub-progress-pct" id="pct-<%= sorteo.id %>">0%</span>
+                          </div>
+                          <div class="pub-progress-bar">
+                            <div class="pub-progress-fill" id="fill-<%= sorteo.id %>" style="width:0%"></div>
+                          </div>
+                          <div class="pub-progress-stats">
+                            <span id="vendidos-<%= sorteo.id %>">Cargando...</span>
+                            <span id="disponibles-<%= sorteo.id %>"></span>
+                          </div>
+                        </div>
+
+                        <!-- Controles -->
+                        <div class="pub-controles">
+                          <button class="pub-btn-aleatorio" onclick="agregarAleatorio(<%= sorteo.id %>)">
+                            🎲 Número aleatorio
+                          </button>
+                          <div class="pub-buscador" id="buscador-<%= sorteo.id %>" style="display:none;">
+                            <input type="number" class="pub-buscar-input" id="buscar-input-<%= sorteo.id %>"
+                              placeholder="Buscar número...">
+                            <button class="pub-buscar-btn" onclick="buscarBoleto(<%= sorteo.id %>)">
+                              Buscar
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Leyenda de colores -->
+                        <div class="pub-leyenda">
+                          <span class="pub-leyenda-item disponible">Disponible</span>
+                          <span class="pub-leyenda-item seleccionado">Seleccionado</span>
+                          <span class="pub-leyenda-item vendido">Vendido</span>
+                          <span class="pub-leyenda-item reservado">Reservado</span>
+                        </div>
+
+                        <!-- Cuadrícula -->
+                        <div class="pub-cuadricula" id="cuadricula-<%= sorteo.id %>">
+                          <div class="pub-loading">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Cargando boletos...
+                          </div>
+                        </div>
+
+                        <!-- Carrito -->
+                        <div class="pub-carrito" id="carrito-<%= sorteo.id %>">
+                          <div class="pub-carrito-header">
+                            <span>🛒 Tu selección</span>
+                            <button class="pub-carrito-limpiar" onclick="limpiarCarrito(<%= sorteo.id %>)">
+                              Limpiar
+                            </button>
+                          </div>
+                          <div class="pub-carrito-boletos" id="carrito-boletos-<%= sorteo.id %>">
+                            <p class="pub-carrito-empty">No has seleccionado ningún boleto</p>
+                          </div>
+                          <div class="pub-carrito-footer">
+                            <div class="pub-carrito-total">
+                              Total: <strong id="carrito-total-<%= sorteo.id %>">$0.00</strong>
+                            </div>
+                            <button class="pub-btn-pagar" id="btn-pagar-<%= sorteo.id %>"
+                              onclick="procederPago(<%= sorteo.id %>, <%= sorteo.precio_boleto %>, '<%= sorteo.moneda %>')"
+                              disabled>
+                              Proceder al pago
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+            </section>
+
+            <!-- MODAL DE PAGO -->
+            <div class="pub-modal-overlay" id="modalPago">
+              <div class="pub-modal">
+                <div class="pub-modal-header">
+                  <h3>💳 Datos de contacto</h3>
+                  <button class="pub-modal-close" onclick="cerrarModalPago()">✕</button>
+                </div>
+                <p style="color:#aaa; font-size:0.85rem; margin-bottom:1.5rem;">
+                  Completa tus datos para continuar. Recibirás tu PIN por correo al confirmar el pago.
+                </p>
+                <div class="pub-form-group">
+                  <label class="pub-form-label">Nombre completo</label>
+                  <input type="text" id="pago-nombre" class="pub-form-input" placeholder="Tu nombre completo">
+                </div>
+                <div class="pub-form-group">
+                  <label class="pub-form-label">Correo electrónico</label>
+                  <input type="email" id="pago-email" class="pub-form-input" placeholder="tucorreo@email.com">
+                </div>
+                <div class="pub-form-group">
+                  <label class="pub-form-label">Teléfono (opcional)</label>
+                  <input type="tel" id="pago-telefono" class="pub-form-input" placeholder="Tu número de teléfono">
+                </div>
+                <div class="pub-form-group">
+                  <label class="pub-form-label">Método de pago</label>
+                  <select id="pago-metodo" class="pub-form-input" onchange="toggleMetodoPago()">
+                    <option value="tarjeta">💳 Tarjeta de crédito / débito</option>
+                    <option value="oxxo">🏪 OXXO Pay</option>
+                  </select>
+                </div>
+                <div id="stripe-card-section" class="pub-form-group">
+                  <label class="pub-form-label">Datos de tarjeta</label>
+                  <div id="stripe-card-element"
+                    style="padding:0.75rem 1rem; border:1px solid #e5e7eb; border-radius:8px; background:white; min-height:44px;">
+                  </div>
+                  <div id="stripe-card-errors"
+                    style="color:#C00000; font-size:0.78rem; margin-top:0.4rem; min-height:20px;"></div>
+                </div>
+                <div id="oxxo-section" style="display:none;">
+                  <div class="pub-form-group">
+                    <div
+                      style="background:#fff3e0; border-left:3px solid #E65100; padding:0.8rem 1rem; border-radius:4px; font-size:0.82rem; color:#E65100;">
+                      ℹ️ Recibirás un voucher por correo para pagar en cualquier OXXO. El pago se confirma en máximo 1
+                      hora.
+                    </div>
+                  </div>
+                </div>
+                <div id="pago-resumen" style="margin:1rem 0;"></div>
+                <button class="pub-btn-confirmar" onclick="confirmarPago()">
+                  <i class="fa-solid fa-lock"></i> Confirmar y pagar
+                </button>
+              </div>
+            </div>
+
+            <%- include('partials/footer') %>
+
+              <script src="https://js.stripe.com/v3/"></script>
+              <script>
+                const STRIPE_PUBLIC_KEY = '<%= stripe_public_key %>';
+                const stripe = Stripe(STRIPE_PUBLIC_KEY);
+              </script>
+              <script src="/js/public.js"></script>
+</body>
+
+</html>

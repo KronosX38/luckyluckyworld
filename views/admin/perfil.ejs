@@ -1,0 +1,217 @@
+<%- include('partials/header') %>
+
+<div style="max-width:500px;">
+  <div class="table-wrap" style="padding:2rem;">
+    <div class="table-title" style="margin-bottom:0.5rem;">👤 Mi perfil</div>
+    <p style="color:#aaa; font-size:0.85rem; margin-bottom:2rem;">
+      Actualiza tu contraseña de acceso al panel.
+    </p>
+
+    <!-- INFO DEL USUARIO -->
+    <div style="background:#f9fafb; border-radius:8px; padding:1.2rem; margin-bottom:2rem;">
+      <div style="display:flex; gap:1rem; align-items:center;">
+        <div style="width:50px; height:50px; border-radius:50%;
+          background:#0D1B3E; display:flex; align-items:center;
+          justify-content:center; font-size:1.3rem; color:#C9A84C;">
+          👤
+        </div>
+        <div>
+          <strong style="display:block; color:#0D1B3E;"><%= usuario.nombre %></strong>
+          <span style="font-size:0.82rem; color:#aaa;"><%= usuario.email %></span><br>
+          <span class="badge <%= usuario.rol === 'admin_owner' ? 'badge-vendido' : 'badge-disponible' %>" style="margin-top:4px;">
+            <%= usuario.rol === 'admin_owner' ? '👑 Propietario' : '⚙️ Operador' %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAMBIAR CONTRASEÑA -->
+    <div class="table-title" style="margin-bottom:1.2rem; font-size:0.95rem;">
+      🔑 Cambiar contraseña
+    </div>
+
+    <div id="alertPerfil"></div>
+
+    <form id="formPerfil">
+
+      <!-- Contraseña actual -->
+      <div class="form-group">
+        <label class="form-label">Contraseña actual</label>
+        <div style="position:relative;">
+          <input type="password" id="pwdActual" class="form-input"
+            placeholder="Tu contraseña actual" style="padding-right:2.8rem;">
+          <button type="button" onclick="toggleVer('pwdActual', 'eye1')"
+            style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+            background:none; border:none; cursor:pointer; color:#aaa; font-size:1rem;">
+            <i class="fa-solid fa-eye" id="eye1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Nueva contraseña -->
+      <div class="form-group">
+        <label class="form-label">Nueva contraseña</label>
+        <div style="position:relative;">
+          <input type="password" id="pwdNueva" class="form-input"
+            placeholder="Nueva contraseña" style="padding-right:2.8rem;"
+            oninput="evaluarFortaleza(this.value); verificarCoincidencia()">
+          <button type="button" onclick="toggleVer('pwdNueva', 'eye2')"
+            style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+            background:none; border:none; cursor:pointer; color:#aaa; font-size:1rem;">
+            <i class="fa-solid fa-eye" id="eye2"></i>
+          </button>
+        </div>
+
+        <!-- Indicador de fortaleza -->
+        <div style="margin-top:0.5rem;">
+          <div style="display:flex; gap:4px; margin-bottom:0.3rem;">
+            <div id="bar1" style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;"></div>
+            <div id="bar2" style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;"></div>
+            <div id="bar3" style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;"></div>
+            <div id="bar4" style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;"></div>
+          </div>
+          <span id="fortalezaLabel" style="font-size:0.72rem; color:#aaa;"></span>
+        </div>
+      </div>
+
+      <!-- Confirmar contraseña -->
+      <div class="form-group">
+        <label class="form-label">Confirmar nueva contraseña</label>
+        <div style="position:relative;">
+          <input type="password" id="pwdConfirmar" class="form-input"
+            placeholder="Confirma tu nueva contraseña" style="padding-right:2.8rem;"
+            oninput="verificarCoincidencia()">
+          <button type="button" onclick="toggleVer('pwdConfirmar', 'eye3')"
+            style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+            background:none; border:none; cursor:pointer; color:#aaa; font-size:1rem;">
+            <i class="fa-solid fa-eye" id="eye3"></i>
+          </button>
+        </div>
+        <!-- Indicador de coincidencia -->
+        <div id="coincidenciaMsg" style="font-size:0.75rem; margin-top:0.3rem;"></div>
+      </div>
+
+      <!-- Requisitos -->
+      <div style="background:#f0f4f8; border-radius:8px; padding:0.8rem 1rem;
+        margin-bottom:1.2rem; font-size:0.75rem;">
+        <div id="req1" style="color:#aaa; margin-bottom:3px;">● Mínimo 8 caracteres</div>
+        <div id="req2" style="color:#aaa; margin-bottom:3px;">● Al menos una mayúscula y una minúscula</div>
+        <div id="req3" style="color:#aaa; margin-bottom:3px;">● Al menos un número</div>
+        <div id="req4" style="color:#aaa;">● Al menos un carácter especial (#$%.@¡?!)</div>
+      </div>
+
+      <button type="submit" class="btn btn-gold" style="width:100%; padding:0.85rem;">
+        <i class="fa-solid fa-floppy-disk"></i> Actualizar contraseña
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('admin_token');
+
+// ── OJITO ──
+function toggleVer(inputId, eyeId) {
+  const input = document.getElementById(inputId);
+  const eye   = document.getElementById(eyeId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    eye.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    input.type = 'password';
+    eye.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+
+// ── FORTALEZA ──
+function evaluarFortaleza(pwd) {
+  const bars  = ['bar1','bar2','bar3','bar4'];
+  const label = document.getElementById('fortalezaLabel');
+  const reqs  = [
+    { id: 'req1', test: pwd.length >= 8 },
+    { id: 'req2', test: /[a-z]/.test(pwd) && /[A-Z]/.test(pwd) },
+    { id: 'req3', test: /\d/.test(pwd) },
+    { id: 'req4', test: /[#$%.@¡?!]/.test(pwd) },
+  ];
+
+  // Actualizar requisitos
+  reqs.forEach(r => {
+    const el = document.getElementById(r.id);
+    el.style.color  = r.test ? '#1A7A4A' : '#aaa';
+    el.textContent  = (r.test ? '✅' : '●') + el.textContent.substring(1);
+  });
+
+  const score = reqs.filter(r => r.test).length;
+
+  const colores = ['#eee', '#C00000', '#E8A020', '#3ecf8e', '#1A7A4A'];
+  const labels  = ['', '😟 Muy débil', '😐 Débil', '🙂 Media', '💪 Fuerte'];
+
+  bars.forEach((b, i) => {
+    document.getElementById(b).style.background = i < score ? colores[score] : '#eee';
+  });
+
+  label.textContent  = pwd.length > 0 ? labels[score] : '';
+  label.style.color  = colores[score];
+}
+
+// ── COINCIDENCIA ──
+function verificarCoincidencia() {
+  const pwd1 = document.getElementById('pwdNueva').value;
+  const pwd2 = document.getElementById('pwdConfirmar').value;
+  const msg  = document.getElementById('coincidenciaMsg');
+
+  if (!pwd2) { msg.textContent = ''; return; }
+
+  if (pwd1 === pwd2) {
+    msg.textContent = '✅ Las contraseñas coinciden';
+    msg.style.color = '#1A7A4A';
+  } else {
+    msg.textContent = '❌ Las contraseñas no coinciden';
+    msg.style.color = '#C00000';
+  }
+}
+
+// ── SUBMIT ──
+document.getElementById('formPerfil').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const alertEl      = document.getElementById('alertPerfil');
+  const pwdActual    = document.getElementById('pwdActual').value;
+  const pwdNueva     = document.getElementById('pwdNueva').value;
+  const pwdConfirmar = document.getElementById('pwdConfirmar').value;
+  const btn          = e.target.querySelector('[type="submit"]');
+
+  if (pwdNueva !== pwdConfirmar) {
+    alertEl.innerHTML = '<div class="alert alert-danger">❌ Las contraseñas no coinciden</div>';
+    return;
+  }
+
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+  btn.disabled  = true;
+
+  const res  = await fetch('/api/auth/perfil/cambiar-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ passwordActual: pwdActual, passwordNueva: pwdNueva })
+  });
+  const data = await res.json();
+
+  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Actualizar contraseña';
+  btn.disabled  = false;
+
+  if (data.ok) {
+    alertEl.innerHTML = '<div class="alert alert-success">✅ Contraseña actualizada correctamente</div>';
+    e.target.reset();
+    // Limpiar indicadores
+    evaluarFortaleza('');
+    document.getElementById('coincidenciaMsg').textContent = '';
+    setTimeout(() => alertEl.innerHTML = '', 3000);
+  } else {
+    alertEl.innerHTML = `<div class="alert alert-danger">❌ ${data.error}</div>`;
+  }
+});
+</script>
+
+<%- include('partials/footer') %>

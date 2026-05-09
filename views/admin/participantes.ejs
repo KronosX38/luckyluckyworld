@@ -1,68 +1,88 @@
 <%- include('partials/header') %>
 
-<!-- FILTRO POR SORTEO -->
-<div class="table-wrap" style="padding:1.2rem; margin-bottom:1.5rem;">
-  <form method="GET" action="/admin/participantes"
-    style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-    <label class="form-label" style="margin:0;">Filtrar por sorteo:</label>
-    <select name="sorteo" class="form-select" style="width:auto; min-width:220px;">
-      <option value="">Todos los sorteos</option>
-      <% sorteos.forEach(s => { %>
-        <option value="<%= s.id %>" <%= sorteoId == s.id ? 'selected' : '' %>>
-          <%= s.nombre %>
-        </option>
-      <% }) %>
-    </select>
-    <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
-    <% if (sorteoId) { %>
-      <a href="/admin/participantes" class="btn btn-outline btn-sm">Ver todos</a>
-    <% } %>
-  </form>
-</div>
-
-<!-- TABLA -->
-<div class="table-wrap">
-  <div class="table-header">
-    <span class="table-title">👥 Participantes (<%= participantes.length %>)</span>
+  <!-- FILTRO POR SORTEO -->
+  <div class="table-wrap" style="padding:1.2rem; margin-bottom:1.5rem;">
+    <form method="GET" action="/admin/participantes"
+      style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+      <label class="form-label" style="margin:0;">Filtrar por sorteo:</label>
+      <select name="sorteo" class="form-select" style="width:auto; min-width:220px;">
+        <option value="">Todos los sorteos</option>
+        <% sorteos.forEach(s=> { %>
+          <option value="<%= s.id %>" <%=sorteoId==s.id ? 'selected' : '' %>>
+            <%= s.nombre %>
+          </option>
+          <% }) %>
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+      <% if (sorteoId) { %>
+        <a href="/admin/participantes" class="btn btn-outline btn-sm">Ver todos</a>
+        <% } %>
+    </form>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Correo</th>
-        <th>Teléfono</th>
-        <th>Sorteo</th>
-        <th>Boletos</th>
-        <th>Números</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (participantes.length === 0) { %>
+
+  <!-- TABLA -->
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title">👥 Participantes (<%= participantes.length %>)</span>
+    </div>
+    <table>
+      <thead>
         <tr>
-          <td colspan="6" style="text-align:center; color:#aaa; padding:2rem;">
-            No hay participantes registrados
-          </td>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+          <th>Sorteo</th>
+          <th>Boletos</th>
+          <th>Números</th>
+          <th>PIN</th>
         </tr>
-      <% } else { %>
-        <% participantes.forEach(p => { %>
+      </thead>
+      <tbody>
+        <% if (participantes.length===0) { %>
           <tr>
-            <td><strong><%= p.nombre %></strong></td>
-            <td><%= p.email %></td>
-            <td><%= p.telefono || '—' %></td>
-            <td><%= p.sorteo_nombre %></td>
-            <td>
-              <span class="badge badge-vendido"><%= p.boletos_comprados %></span>
-            </td>
-            <td>
-              <small style="color:#aaa; word-break:break-all;">
-                <%= p.numeros %>
-              </small>
+            <td colspan="6" style="text-align:center; color:#aaa; padding:2rem;">
+              No hay participantes registrados
             </td>
           </tr>
-        <% }) %>
-      <% } %>
-    </tbody>
-  </table>
-</div>
+          <% } else { %>
+            <% participantes.forEach(p=> { %>
+              <tr>
+                <td><strong>
+                    <%= p.nombre %>
+                  </strong></td>
+                <td>
+                  <%= p.email %>
+                </td>
+                <td>
+                  <%= p.telefono || '—' %>
+                </td>
+                <td>
+                  <%= p.sorteo_nombre %>
+                </td>
+                <td>
+                  <span class="badge badge-vendido">
+                    <%= p.boletos_comprados %>
+                  </span>
+                </td>
+                <td>
+                  <small style="color:#aaa; word-break:break-all;">
+                    <%= p.numeros %>
+                  </small>
+                </td>
+                <td>
+                  <% if (p.pin) { %>
+                    <code style="background:#f5f5f5; padding:2px 6px; border-radius:4px; font-size:0.78rem;">
+      ****<%= p.pin.slice(-4) %>
+    </code>
+                    <% } else { %>
+                      <span style="color:#aaa;">—</span>
+                      <% } %>
+                </td>
+              </tr>
+              <% }) %>
+                <% } %>
+      </tbody>
+    </table>
+  </div>
 
-<%- include('partials/footer') %>
+  <%- include('partials/footer') %>

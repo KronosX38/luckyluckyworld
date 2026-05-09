@@ -67,37 +67,66 @@
     </table>
   </div>
 
-  <div class="table-wrap" style="padding:1.5rem;">
-    <div class="table-title" style="margin-bottom:1rem;">🎁 Premio</div>
-    <table>
-      <tr>
-        <td style="color:#aaa;">Descripción</td>
-        <td><strong><%= sorteo.premio_descripcion || '—' %></strong></td>
-      </tr>
-      <tr>
-        <td style="color:#aaa;">Valor</td>
-        <td><strong>$<%= sorteo.premio_monto || '—' %> <%= sorteo.premio_moneda %></strong></td>
-      </tr>
-      <tr>
-        <td style="color:#aaa;">Fecha del sorteo</td>
-        <td><strong><%= sorteo.fecha_sorteo ? new Date(sorteo.fecha_sorteo).toLocaleString('es-MX') : '—' %></strong></td>
-      </tr>
-    </table>
+  <!-- PREMIO -->
+<div class="table-wrap" style="padding:1.5rem;">
+  <div class="table-title" style="margin-bottom:1rem;">🎁 Premio e imagen</div>
 
-    <% if (sorteo.estado === 'activo') { %>
-      <div style="margin-top:1rem;">
-        <label class="form-label">Actualizar link de YouTube Live</label>
-        <div style="display:flex; gap:0.5rem;">
-          <input type="text" id="youtubeLink" class="form-input"
-            value="<%= sorteo.youtube_link || '' %>"
-            placeholder="https://youtube.com/watch?v=...">
-          <button class="btn btn-primary btn-sm" onclick="actualizarYoutube()">
-            Guardar
-          </button>
-        </div>
+  <!-- Imagen actual -->
+  <div style="margin-bottom:1rem;">
+    <% if (sorteo.imagen_url) { %>
+      <img src="<%= sorteo.imagen_url %>" alt="Premio"
+        style="width:100%; max-height:200px; object-fit:contain; border-radius:8px; background:#f0f4f8;">
+    <% } else { %>
+      <div style="width:100%; height:140px; background:#f0f4f8; border-radius:8px;
+        display:flex; align-items:center; justify-content:center; color:#aaa; font-size:0.85rem;">
+        Sin imagen del premio
       </div>
     <% } %>
   </div>
+
+  <!-- Subir imagen -->
+  <% if (sorteo.estado === 'activo' || sorteo.estado === 'borrador') { %>
+    <div style="margin-bottom:1.5rem;">
+      <label class="form-label">Subir imagen del premio</label>
+      <input type="file" id="inputImagen" accept="image/*" class="form-input"
+        style="padding:0.4rem;">
+      <button class="btn btn-primary btn-sm" style="margin-top:0.5rem; width:100%;"
+        onclick="subirImagen(<%= sorteo.id %>)">
+        <i class="fa-solid fa-upload"></i> Subir imagen
+      </button>
+      <small style="color:#aaa; font-size:0.72rem;">JPG, PNG o WEBP — máximo 5MB</small>
+    </div>
+  <% } %>
+
+  <table>
+    <tr>
+      <td style="color:#aaa;">Descripción</td>
+      <td><strong><%= sorteo.premio_descripcion || '—' %></strong></td>
+    </tr>
+    <tr>
+      <td style="color:#aaa;">Valor</td>
+      <td><strong>$<%= Number(sorteo.premio_monto || 0).toLocaleString('es-MX', {minimumFractionDigits:2}) %> <%= sorteo.premio_moneda %></strong></td>
+    </tr>
+    <tr>
+      <td style="color:#aaa;">Fecha del sorteo</td>
+      <td><strong><%= sorteo.fecha_sorteo ? new Date(sorteo.fecha_sorteo).toLocaleString('es-MX') : '—' %></strong></td>
+    </tr>
+  </table>
+
+  <% if (sorteo.estado === 'activo') { %>
+    <div style="margin-top:1rem;">
+      <label class="form-label">Actualizar link de YouTube Live</label>
+      <div style="display:flex; gap:0.5rem;">
+        <input type="text" id="youtubeLink" class="form-input"
+          value="<%= sorteo.youtube_link || '' %>"
+          placeholder="https://youtube.com/watch?v=...">
+        <button class="btn btn-primary btn-sm" onclick="actualizarYoutube()">
+          Guardar
+        </button>
+      </div>
+    </div>
+  <% } %>
+</div>
 
 </div>
 
@@ -111,34 +140,36 @@
       <span class="badge badge-disponible">● Disponible</span>
     </div>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Número</th>
-        <th>Estado</th>
-        <th>Comprador</th>
-        <th>PIN</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% boletos.forEach(b => { %>
+  <div style="max-height:500px; overflow-y:auto;">
+    <table>
+      <thead style="position:sticky; top:0; z-index:1;">
         <tr>
-          <td><strong><%= b.numero %></strong></td>
-          <td><span class="badge badge-<%= b.estado %>"><%= b.estado %></span></td>
-          <td><%= b.comprador_nombre || '—' %></td>
-          <td>
-            <% if (b.pin) { %>
-              <code style="background:#f5f5f5; padding:2px 8px; border-radius:4px; font-size:0.85rem;">
-                <%= b.pin %>
-              </code>
-            <% } else { %>
-              <span style="color:#aaa;">—</span>
-            <% } %>
-          </td>
+          <th>Número</th>
+          <th>Estado</th>
+          <th>Comprador</th>
+          <th>PIN</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% boletos.forEach(b => { %>
+          <tr>
+            <td><strong><%= b.numero %></strong></td>
+            <td><span class="badge badge-<%= b.estado %>"><%= b.estado %></span></td>
+            <td><%= b.comprador_nombre || '—' %></td>
+            <td>
+              <% if (b.pin) { %>
+                <code style="background:#f5f5f5; padding:2px 8px; border-radius:4px; font-size:0.85rem;">
+                  <%= b.pin %>
+                </code>
+              <% } else { %>
+                <span style="color:#aaa;">—</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -171,6 +202,31 @@ async function actualizarYoutube() {
   });
   const result = await res.json();
   alert(result.ok ? '✅ Link actualizado' : '❌ ' + result.error);
+}
+
+async function subirImagen(id) {
+  const input = document.getElementById('inputImagen');
+  if (!input.files[0]) {
+    alert('Selecciona una imagen primero');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('imagen', input.files[0]);
+
+  const res = await fetch(`/api/admin/api/sorteos/${id}/imagen`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  });
+  const result = await res.json();
+
+  if (result.ok) {
+    alert('✅ Imagen actualizada correctamente');
+    window.location.reload();
+  } else {
+    alert('❌ ' + result.error);
+  }
 }
 </script>
 

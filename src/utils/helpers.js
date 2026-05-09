@@ -22,9 +22,9 @@ const verifyToken = (token) => {
   return jwt.verify(token, process.env.JWT_SECRET);
 };
 
-// Generar PIN único seguro
-const generatePIN = (sorteoId, numero) => {
-  const data = `${sorteoId}-${numero}-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
+// Generar PIN único por transacción
+const generatePIN = (transaccionId) => {
+  const data = `${transaccionId}-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
   return crypto.createHash('sha256').update(data).digest('hex').substring(0, 10).toUpperCase();
 };
 

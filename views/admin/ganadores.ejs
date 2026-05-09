@@ -1,187 +1,515 @@
 <%- include('partials/header') %>
 
-<!-- MODAL REGISTRAR GANADOR -->
-<div class="modal-overlay" id="modalGanador">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title">🏆 Registrar Ganador</span>
-      <button class="modal-close">✕</button>
+  <!-- ══════════════════════════════════════════
+       MODAL — REGISTRAR GANADOR
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalGanador">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">🏆 Registrar Ganador</span>
+        <button class="modal-close">✕</button>
+      </div>
+      <div id="paso1Ganador">
+        <div class="form-group">
+          <label class="form-label">Sorteo</label>
+          <select id="ganadorSorteo" class="form-select" required>
+            <option value="">Selecciona el sorteo</option>
+            <% sorteos.filter(s => s.estado === 'cerrado' || s.estado === 'activo').forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de boleto ganador</label>
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="ganadorNumero" class="form-input" placeholder="Ej: 042" style="flex:1;">
+            <button class="btn btn-primary" onclick="buscarBoletoGanador()">
+              <i class="fa-solid fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+        <div id="ganadorError" class="alert alert-danger" style="display:none;"></div>
+      </div>
+      <div id="paso2Ganador" style="display:none;">
+        <div style="background:#E8F5E9; border-radius:8px; padding:1.2rem; margin-bottom:1.5rem;">
+          <div style="font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:#1B5E20; margin-bottom:0.8rem; font-weight:500;">
+            ✅ Boleto encontrado
+          </div>
+          <div id="ganadorDatos" style="font-size:0.88rem; color:#1B4332; line-height:1.8;"></div>
+        </div>
+        <div class="alert alert-warning">⚠️ Verifica que los datos sean correctos antes de confirmar.</div>
+        <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+          <button class="btn btn-outline" onclick="volverPaso1Ganador()">← Volver</button>
+          <button class="btn btn-gold" onclick="confirmarGanador()">🏆 Confirmar ganador</button>
+        </div>
+      </div>
     </div>
-    <form id="formGanador">
-      <div class="form-group">
-        <label class="form-label">Sorteo</label>
-        <select name="sorteo_id" class="form-select" required>
-          <option value="">Selecciona un sorteo</option>
-          <% sorteos.filter(s => s.estado === 'cerrado' || s.estado === 'activo').forEach(s => { %>
-            <option value="<%= s.id %>"><%= s.nombre %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Número de boleto ganador</label>
-        <input type="text" name="numero_boleto" class="form-input"
-          required placeholder="Ej: 042">
-      </div>
-      <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
-        <button type="button" class="btn btn-outline modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-gold">Registrar</button>
-      </div>
-    </form>
   </div>
-</div>
 
-<!-- ENCABEZADO -->
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-  <p style="color:#aaa; font-size:0.85rem;"><%= ganadores.length %> ganador(es) registrado(s)</p>
-  <button class="btn btn-gold" onclick="openModal('modalGanador')">
-    <i class="fa-solid fa-plus"></i> Registrar ganador
-  </button>
-</div>
-
-<!-- TABLA -->
-<div class="table-wrap">
-  <div class="table-header">
-    <span class="table-title">🏆 Ganadores</span>
+  <!-- ══════════════════════════════════════════
+       MODAL — GESTIONAR GANADOR
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modalDetalle">
+    <div class="modal" style="max-width:600px; max-height:90vh; overflow-y:auto;">
+      <div class="modal-header">
+        <span class="modal-title" id="detalleTitle">🏆 Gestionar Ganador</span>
+        <button class="modal-close">✕</button>
+      </div>
+      <div id="detalleContenido"></div>
+    </div>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Sorteo</th>
-        <th>Boleto</th>
-        <th>Ganador</th>
-        <th>Contacto</th>
-        <th>PIN</th>
-        <th>Premio</th>
-        <th>Notificado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (ganadores.length === 0) { %>
+
+  <!-- ══════════════════════════════════════════
+       ENCABEZADO + TABLA
+  ══════════════════════════════════════════ -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+    <p style="color:#aaa; font-size:0.85rem;"><%= ganadores.length %> ganador(es) registrado(s)</p>
+    <button class="btn btn-gold" onclick="openModal('modalGanador')">
+      <i class="fa-solid fa-plus"></i> Registrar ganador
+    </button>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title">🏆 Ganadores</span>
+    </div>
+    <table>
+      <thead>
         <tr>
-          <td colspan="8" style="text-align:center; color:#aaa; padding:2rem;">
-            No hay ganadores registrados
-          </td>
+          <th>Sorteo</th>
+          <th>Boleto</th>
+          <th>Ganador</th>
+          <th>Comprobante</th>
+          <th>Premio</th>
+          <th>Acciones</th>
         </tr>
-      <% } else { %>
-        <% ganadores.forEach(g => { %>
+      </thead>
+      <tbody>
+        <% if (ganadores.length === 0) { %>
           <tr>
-            <td><%= g.sorteo_nombre %></td>
-            <td><strong><%= g.boleto_numero %></strong></td>
-            <td><%= g.comprador_nombre %></td>
-            <td>
-              <%= g.email %><br>
-              <small style="color:#aaa;"><%= g.telefono || '' %></small>
-            </td>
-            <td>
-              <code style="background:#f5f5f5; padding:2px 8px; border-radius:4px;">
-                <%= g.pin %>
-              </code>
-            </td>
-            <td>
-              <span class="badge <%= g.premio_entregado ? 'badge-vendido' : 'badge-reservado' %>">
-                <%= g.premio_entregado ? '✅ Entregado' : '⏳ Pendiente' %>
-              </span>
-            </td>
-            <td>
-              <div style="display:flex; gap:0.3rem; flex-direction:column;">
-                <span style="font-size:0.75rem;">
-                  📧 <%= g.notificado_email ? '✅' : '❌' %>
-                  WhatsApp <%= g.notificado_wa ? '✅' : '❌' %>
-                </span>
-              </div>
-            </td>
-            <td>
-              <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm"
-                  onclick="notificar(<%= g.id %>, 'email', '<%= g.email %>')">
-                  📧
-                </button>
-                <button class="btn btn-success btn-sm"
-                  onclick="notificar(<%= g.id %>, 'wa', '<%= g.telefono %>')">
-                  💬
-                </button>
-                <% if (!g.premio_entregado) { %>
-                  <button class="btn btn-gold btn-sm"
-                    onclick="marcarEntregado(<%= g.id %>)">
-                    ✅
-                  </button>
-                <% } %>
-              </div>
-            </td>
+            <td colspan="6" style="text-align:center; color:#aaa; padding:2rem;">No hay ganadores registrados</td>
           </tr>
-        <% }) %>
-      <% } %>
-    </tbody>
-  </table>
-</div>
+        <% } else { %>
+          <% ganadores.forEach(g => { %>
+            <tr>
+              <td><small><%= g.sorteo_nombre %></small></td>
+              <td><strong>#<%= g.boleto_numero %></strong></td>
+              <td>
+                <strong><%= g.comprador_nombre %></strong><br>
+                <small style="color:#aaa;"><%= g.email %></small>
+              </td>
+              <td>
+                <% if (g.comprobante_url) { %>
+                  <span class="badge badge-activo">✅ Subido</span>
+                <% } else { %>
+                  <span class="badge badge-cancelado">❌ Pendiente</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (g.premio_entregado) { %>
+                  <span class="badge badge-vendido">✅ Entregado</span>
+                <% } else if (g.pin_verificado) { %>
+                  <span class="badge badge-activo" style="background:#FFF3CD;color:#856404;border-color:#FFEEBA;">🔄 En proceso</span>
+                <% } else { %>
+                  <span class="badge badge-reservado">⏳ Pendiente</span>
+                <% } %>
+              </td>
+              <td>
+                <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                  <button class="btn btn-outline btn-sm"
+                    onclick="toggleVisible(<%= g.id %>, <%= g.visible_publico ? 0 : 1 %>)"
+                    title="<%= g.visible_publico ? 'Ocultar del público' : 'Mostrar al público' %>">
+                    <i class="fa-solid <%= g.visible_publico ? 'fa-eye' : 'fa-eye-slash' %>"></i>
+                  </button>
+                  <% if (!g.notificado_email) { %>
+                    <button class="btn btn-outline btn-sm"
+                      onclick="notificarEmailTabla(<%= g.id %>, '<%= g.pin || '' %>', <%= g.pin_verificado %>)"
+                      title="Enviar correo al ganador">
+                      <i class="fa-solid fa-envelope"></i>
+                    </button>
+                  <% } else { %>
+                    <button class="btn btn-outline btn-sm" disabled title="Correo ya enviado" style="opacity:0.45;">
+                      <i class="fa-solid fa-envelope-circle-check"></i>
+                    </button>
+                  <% } %>
+                  <button class="btn btn-outline btn-sm"
+                    onclick="notificarWA('<%= g.telefono || '' %>', '<%= g.comprador_nombre %>', '<%= g.boleto_numero %>')"
+                    title="Notificar por WhatsApp">
+                    <i class="fa-brands fa-whatsapp"></i>
+                  </button>
+                  <button class="btn btn-primary btn-sm"
+                    data-id="<%= g.id %>"
+                    data-nombre="<%= g.comprador_nombre %>"
+                    data-email="<%= g.email %>"
+                    data-telefono="<%= g.telefono || '' %>"
+                    data-boleto="<%= g.boleto_numero %>"
+                    data-pin="<%= g.pin || '' %>"
+                    data-foto="<%= g.foto_url || '' %>"
+                    data-comprobante="<%= g.comprobante_url || '' %>"
+                    data-comprobante-tipo="<%= g.comprobante_tipo || '' %>"
+                    data-notificado="<%= g.notificado_email %>"
+                    data-entregado="<%= g.premio_entregado %>"
+                    data-pin-verificado="<%= g.pin_verificado %>"
+                    onclick="abrirDetalleBtn(this)">
+                    <i class="fa-solid fa-ellipsis"></i> Gestionar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
 
-<script>
-const token = localStorage.getItem('admin_token');
+  <script>
+    const token = localStorage.getItem('admin_token');
+    let boletoGanador = null;
 
-// Registrar ganador
-document.getElementById('formGanador').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target));
-  const btn = e.target.querySelector('[type="submit"]');
-  btn.textContent = 'Registrando...';
-  btn.disabled = true;
+    // ── BUSCAR BOLETO ──
+    async function buscarBoletoGanador() {
+      const sorteoId = document.getElementById('ganadorSorteo').value;
+      const numero   = document.getElementById('ganadorNumero').value.trim();
+      const errEl    = document.getElementById('ganadorError');
+      if (!sorteoId) { mostrarErrorInline(errEl, 'Selecciona el sorteo'); return; }
+      if (!numero)   { mostrarErrorInline(errEl, 'Ingresa el número de boleto'); return; }
+      const res  = await fetch(`/api/admin/api/boletos/buscar?sorteo_id=${sorteoId}&numero=${numero}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!data.ok) { mostrarErrorInline(errEl, data.error || 'Boleto no encontrado'); return; }
+      const b = data.boleto;
+      if (b.estado !== 'vendido') {
+        mostrarErrorInline(errEl, `Este boleto está en estado "${b.estado}" — solo boletos vendidos`);
+        return;
+      }
+      boletoGanador = b;
+      errEl.style.display = 'none';
+      document.getElementById('ganadorDatos').innerHTML = `
+        <strong>Boleto:</strong> #${b.numero}<br>
+        <strong>Comprador:</strong> ${b.nombre}<br>
+        <strong>Correo:</strong> ${b.email}<br>
+        <strong>Teléfono:</strong> ${b.telefono || '—'}<br>
+        <strong>PIN:</strong> <code style="background:#f0f4f8;padding:2px 8px;border-radius:4px;">****${b.pin.slice(-4)}</code>
+      `;
+      document.getElementById('paso1Ganador').style.display = 'none';
+      document.getElementById('paso2Ganador').style.display = 'block';
+    }
 
-  // Buscar boleto ganador
-  const res = await fetch(`/api/sorteos/${data.sorteo_id}/boletos/verificar-pin`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ numero: data.numero_boleto })
-  });
+    function volverPaso1Ganador() {
+      document.getElementById('paso1Ganador').style.display = 'block';
+      document.getElementById('paso2Ganador').style.display = 'none';
+      boletoGanador = null;
+    }
 
-  const result = await res.json();
-  if (result.ok) {
-    alert('✅ Ganador registrado correctamente');
-    window.location.reload();
-  } else {
-    alert('❌ ' + (result.error || 'Error registrando ganador'));
-    btn.textContent = 'Registrar';
-    btn.disabled = false;
-  }
-});
+    // ── CONFIRMAR GANADOR ──
+    async function confirmarGanador() {
+      if (!boletoGanador) return;
+      const sorteoId = document.getElementById('ganadorSorteo').value;
+      const btn = event.target;
+      btn.textContent = 'Registrando...';
+      btn.disabled = true;
+      const res  = await fetch('/api/admin/api/ganadores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ sorteo_id: sorteoId, boleto_id: boletoGanador.id, comprador_id: boletoGanador.comprador_id })
+      });
+      const data = await res.json();
+      if (data.ok) { alert('🏆 ¡Ganador registrado correctamente!'); window.location.reload(); }
+      else { alert('❌ ' + data.error); btn.textContent = '🏆 Confirmar ganador'; btn.disabled = false; }
+    }
 
-// Notificar ganador
-async function notificar(id, tipo, contacto) {
-  if (!contacto || contacto === 'null') {
-    alert('❌ No hay datos de contacto registrados');
-    return;
-  }
-  if (tipo === 'wa') {
-    window.open(`https://wa.me/${contacto}`, '_blank');
-  } else {
-    alert('📧 Correo enviado a ' + contacto);
-  }
-}
+    // ── ABRIR MODAL DETALLE ──
+    // ── WRAPPER DATA-ATTRS ──
+    function abrirDetalleBtn(btn) {
+      abrirDetalle(
+        btn.dataset.id,
+        btn.dataset.nombre,
+        btn.dataset.email,
+        btn.dataset.telefono,
+        btn.dataset.boleto,
+        btn.dataset.pin,
+        btn.dataset.foto,
+        btn.dataset.comprobante,
+        btn.dataset.comprobanteTipo,
+        parseInt(btn.dataset.notificado),
+        parseInt(btn.dataset.entregado),
+        parseInt(btn.dataset.pinVerificado)
+      );
+    }
 
-// Marcar premio entregado
-async function marcarEntregado(id) {
-  if (!confirm('¿Confirmar que el premio fue entregado?')) return;
-  const res = await fetch(`/api/ganadores/${id}/entregado`, {
-    method: 'PATCH',
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  const result = await res.json();
-  if (result.ok) {
-    alert('✅ Premio marcado como entregado');
-    window.location.reload();
-  } else {
-    alert('❌ ' + result.error);
-  }
-}
+    function abrirDetalle(id, nombre, email, telefono, boleto, pin,
+      fotoUrl, comprobanteUrl, comprobanteTipo, notificadoEmail, premioEntregado, pinVerificado) {
 
-document.querySelectorAll('.modal-close').forEach(btn => {
-  btn.addEventListener('click', () => {
-    btn.closest('.modal-overlay')?.classList.remove('open');
-  });
-});
-</script>
+      const mostrarComprobante = pinVerificado || premioEntregado;
+
+      const seccionFoto = `
+        <div class="form-group" style="margin-bottom:1.5rem;">
+          <label class="form-label" style="font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;color:#666;">
+            📸 Foto del ganador <span style="font-weight:400;text-transform:none;">(opcional — requiere autorización)</span>
+          </label>
+          <div id="fotoPreviewZona" style="margin-bottom:0.6rem;">
+            ${fotoUrl
+              ? `<img src="${fotoUrl}" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#f0f4f8;">`
+              : `<div id="fotoPlaceholder" style="width:100%;height:80px;background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.82rem;">Sin foto del ganador</div>`}
+          </div>
+          <input type="file" id="inputFoto" accept="image/*" class="form-input" style="padding:0.4rem;" onchange="previewFotoLocal()">
+          <button class="btn btn-outline btn-sm" style="margin-top:0.5rem;width:100%;" onclick="subirFoto(${id})">
+            <i class="fa-solid fa-upload"></i> Guardar foto
+          </button>
+          <div id="fotoMsg" style="display:none;margin-top:0.4rem;"></div>
+        </div>`;
+
+      const seccionInfo = `
+        <div style="background:#f9fafb;border-radius:8px;padding:1rem;margin-bottom:1.5rem;">
+          <div style="font-size:0.82rem;line-height:1.9;color:#333;">
+            👤 <strong>${nombre}</strong><br>
+            📧 ${email}<br>
+            📱 ${telefono || '—'}<br>
+            🎟️ Boleto: <strong>#${boleto}</strong><br>
+            🔑 PIN: <code style="background:#f0f4f8;padding:2px 8px;border-radius:4px;">****${pin.slice(-4)}</code>
+          </div>
+        </div>`;
+
+      const seccionPin = premioEntregado ? '' : `
+        <div class="form-group" style="margin-bottom:1.5rem;">
+          <label class="form-label" style="font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;">
+            🔐 Paso 1 — Verificar PIN del ganador
+          </label>
+          ${pinVerificado
+            ? `<div class="alert alert-success" style="margin:0;">✅ PIN verificado — identidad confirmada</div>`
+            : `<div style="display:flex;gap:0.5rem;">
+                 <input type="text" id="inputPinVerificar" class="form-input"
+                   placeholder="Ingresa el PIN del ganador"
+                   style="flex:1;text-transform:uppercase;letter-spacing:0.12em;">
+                 <button class="btn btn-primary" onclick="verificarPinGanador(${id})">Verificar</button>
+               </div>
+               <div id="pinVerificadoMsg" style="margin-top:0.5rem;min-height:20px;"></div>`}
+        </div>`;
+
+      const seccionComprobante = mostrarComprobante ? `
+        <div class="form-group" id="seccionComprobante" style="margin-bottom:1.5rem;">
+          <label class="form-label" style="font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;">
+            📄 Paso 2 — Comprobante de entrega
+          </label>
+          <div id="comprobantePreview" style="margin-bottom:0.6rem;">
+            ${comprobanteUrl
+              ? (comprobanteTipo === 'pdf'
+                  ? `<a href="${comprobanteUrl}" target="_blank" class="btn btn-outline btn-sm" style="display:inline-flex;"><i class="fa-solid fa-file-pdf"></i> Ver comprobante PDF</a>`
+                  : `<img src="${comprobanteUrl}" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;background:#f0f4f8;">`)
+              : `<div style="width:100%;height:60px;background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.82rem;">Sin comprobante</div>`}
+          </div>
+          ${!premioEntregado ? `
+            <input type="file" id="inputComprobante" accept="image/*,.pdf" class="form-input" style="padding:0.4rem;">
+            <button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" onclick="subirComprobante(${id})">
+              <i class="fa-solid fa-upload"></i> Guardar comprobante
+            </button>
+            <div id="comprobanteMsg" style="display:none;margin-top:0.4rem;"></div>
+          ` : ''}
+        </div>` : `
+        <div class="alert alert-warning" id="alertPinPendiente" style="margin-bottom:1.5rem;">
+          🔐 Verifica el PIN del ganador para habilitar la sección de comprobante
+        </div>`;
+
+      const seccionEntregado = premioEntregado
+        ? `<div class="alert alert-success" style="margin-top:0.5rem;">✅ Premio entregado</div>`
+        : (mostrarComprobante ? `
+            <button class="btn btn-gold" style="width:100%;margin-top:0.5rem;" id="btnEntregado"
+              ${!comprobanteUrl ? 'disabled' : ''} onclick="marcarEntregado(${id})">
+              ✅ Paso 3 — Marcar premio como entregado
+            </button>
+            ${!comprobanteUrl ? `<small style="color:#aaa;font-size:0.75rem;display:block;text-align:center;margin-top:0.3rem;">⚠️ Sube el comprobante antes de marcar como entregado</small>` : ''}
+          ` : '');
+
+      document.getElementById('detalleContenido').innerHTML = seccionFoto + seccionInfo + seccionPin + seccionComprobante + seccionEntregado;
+      document.getElementById('detalleTitle').textContent = `🏆 ${nombre}`;
+      openModal('modalDetalle');
+    }
+
+    // ── PREVIEW LOCAL DE FOTO ──
+    function previewFotoLocal() {
+      const input = document.getElementById('inputFoto');
+      if (!input.files[0]) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('fotoPreviewZona').innerHTML =
+          `<img src="${e.target.result}" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#f0f4f8;">`;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+
+    // ── SUBIR FOTO ──
+    async function subirFoto(id) {
+      const input = document.getElementById('inputFoto');
+      if (!input.files[0]) { alert('Selecciona una imagen primero'); return; }
+      const btn = event.target;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+      btn.disabled = true;
+      const formData = new FormData();
+      formData.append('foto', input.files[0]);
+      const res  = await fetch(`/api/admin/api/ganadores/${id}/foto`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
+      });
+      const data = await res.json();
+      btn.innerHTML = '<i class="fa-solid fa-upload"></i> Guardar foto';
+      btn.disabled = false;
+      if (data.ok) {
+        document.getElementById('fotoPreviewZona').innerHTML =
+          `<img src="${data.url}" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#f0f4f8;">`;
+        mostrarMensaje('fotoMsg', '✅ Foto guardada correctamente', 'success');
+        // Actualizar data-foto en el botón de la tabla para que al reabrir muestre la foto nueva
+        const btnTabla = document.querySelector(`button[data-id="${id}"]`);
+        if (btnTabla) btnTabla.dataset.foto = data.url;
+      } else {
+        mostrarMensaje('fotoMsg', '❌ ' + data.error, 'danger');
+      }
+    }
+
+    // ── SUBIR COMPROBANTE ──
+    async function subirComprobante(id) {
+      const input = document.getElementById('inputComprobante');
+      if (!input.files[0]) { alert('Selecciona un archivo primero'); return; }
+      const btn = event.target;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+      btn.disabled = true;
+      const formData = new FormData();
+      formData.append('comprobante', input.files[0]);
+      const res  = await fetch(`/api/admin/api/ganadores/${id}/comprobante`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
+      });
+      const data = await res.json();
+      btn.innerHTML = '<i class="fa-solid fa-upload"></i> Guardar comprobante';
+      btn.disabled = false;
+      if (data.ok) {
+        mostrarMensaje('comprobanteMsg', '✅ Comprobante guardado correctamente', 'success');
+        const previewHtml = data.tipo === 'pdf'
+          ? `<a href="${data.url}" target="_blank" class="btn btn-outline btn-sm" style="display:inline-flex;"><i class="fa-solid fa-file-pdf"></i> Ver comprobante PDF</a>`
+          : `<img src="${data.url}" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;background:#f0f4f8;margin-top:0.4rem;">`;
+        document.getElementById('comprobantePreview').innerHTML = previewHtml;
+        const btnEntregado = document.getElementById('btnEntregado');
+        if (btnEntregado) {
+          btnEntregado.disabled = false;
+          const aviso = btnEntregado.nextElementSibling;
+          if (aviso && aviso.tagName === 'SMALL') aviso.remove();
+        }
+      } else {
+        mostrarMensaje('comprobanteMsg', '❌ ' + data.error, 'danger');
+      }
+    }
+
+    // ── VERIFICAR PIN ──
+    async function verificarPinGanador(ganadorId) {
+      const pin   = document.getElementById('inputPinVerificar').value.trim().toUpperCase();
+      const msgEl = document.getElementById('pinVerificadoMsg');
+      if (!pin) { msgEl.innerHTML = '<span style="color:#C00000;font-size:0.78rem;">❌ Ingresa el PIN</span>'; return; }
+      const res  = await fetch('/api/admin/api/ganadores/verificar-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ ganador_id: ganadorId, pin })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        msgEl.innerHTML = '<span style="color:#1A7A4A;font-size:0.82rem;">✅ PIN válido — identidad verificada</span>';
+        // Mostrar sección comprobante + paso 3 dinámicamente
+        const alertPending = document.getElementById('alertPinPendiente');
+        if (alertPending) {
+          alertPending.outerHTML = `
+            <div class="form-group" id="seccionComprobante" style="margin-bottom:1.5rem;">
+              <label class="form-label" style="font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;">
+                📄 Paso 2 — Comprobante de entrega
+              </label>
+              <div id="comprobantePreview" style="margin-bottom:0.6rem;">
+                <div style="width:100%;height:60px;background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:0.82rem;">Sin comprobante</div>
+              </div>
+              <input type="file" id="inputComprobante" accept="image/*,.pdf" class="form-input" style="padding:0.4rem;">
+              <button class="btn btn-primary btn-sm" style="margin-top:0.5rem;width:100%;" onclick="subirComprobante(${ganadorId})">
+                <i class="fa-solid fa-upload"></i> Guardar comprobante
+              </button>
+              <div id="comprobanteMsg" style="display:none;margin-top:0.4rem;"></div>
+            </div>
+            <button class="btn btn-gold" style="width:100%;margin-top:0.5rem;" id="btnEntregado" disabled onclick="marcarEntregado(${ganadorId})">
+              ✅ Paso 3 — Marcar premio como entregado
+            </button>
+            <small style="color:#aaa;font-size:0.75rem;display:block;text-align:center;margin-top:0.3rem;">
+              ⚠️ Sube el comprobante antes de marcar como entregado
+            </small>`;
+        }
+      } else {
+        msgEl.innerHTML = `<span style="color:#C00000;font-size:0.78rem;">❌ ${data.error || 'PIN incorrecto'}</span>`;
+      }
+    }
+
+    // ── NOTIFICAR EMAIL DESDE TABLA ──
+    async function notificarEmailTabla(id, pin, pinVerificado) {
+      if (!pinVerificado) {
+        alert('⚠️ Debes verificar el PIN del ganador antes de enviar el correo.\nAbre "Gestionar" para verificarlo primero.');
+        return;
+      }
+      if (!confirm('¿Enviar correo de ganador?')) return;
+      const res  = await fetch(`/api/admin/api/ganadores/${id}/notificar-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ pin })
+      });
+      const data = await res.json();
+      if (data.ok) { alert('✅ Correo enviado'); window.location.reload(); }
+      else alert('❌ ' + data.error);
+    }
+
+    // ── NOTIFICAR WHATSAPP ──
+    function notificarWA(telefono, nombre, boleto) {
+      if (!telefono || telefono === 'null' || telefono === '') {
+        alert('❌ Este ganador no tiene teléfono registrado'); return;
+      }
+      const msg = `Hola ${nombre}, ¡felicidades! 🎉 Tu boleto *#${boleto}* resultó ganador en Lucky Lucky World. Por favor contáctanos para coordinar la entrega de tu premio.`;
+      window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // ── TOGGLE VISIBLE ──
+    async function toggleVisible(id, visible) {
+      const res  = await fetch(`/api/admin/api/ganadores/${id}/visible`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ visible })
+      });
+      const data = await res.json();
+      if (data.ok) window.location.reload();
+      else alert('❌ ' + data.error);
+    }
+
+    // ── MARCAR ENTREGADO ──
+    async function marcarEntregado(id) {
+      if (!confirm('¿Confirmar que el premio fue entregado?')) return;
+      const res  = await fetch(`/api/admin/api/ganadores/${id}/entregado`, {
+        method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.ok) { alert('✅ Premio marcado como entregado'); window.location.reload(); }
+      else alert('❌ ' + data.error);
+    }
+
+    // ── HELPERS ──
+    function mostrarMensaje(id, msg, tipo) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = `alert alert-${tipo}`;
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    function mostrarErrorInline(el, msg) {
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('.modal-overlay')?.classList.remove('open');
+        if (document.getElementById('paso2Ganador')) volverPaso1Ganador();
+      });
+    });
+  </script>
 
 <%- include('partials/footer') %>

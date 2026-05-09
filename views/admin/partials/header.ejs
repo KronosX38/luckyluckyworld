@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %> — Lucky Lucky World</title>
+  <title>
+    <%= title %> — Lucky Lucky World
+  </title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/css/admin.css">
 </head>
+
 <body>
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <span class="brand-icon">🎟️</span>
-      <span class="brand-name">Lucky Lucky World</span>
+      <img src="/img/logo.svg" alt="Lucky Lucky World" style="height:72px; width:auto; filter:brightness(0) invert(1);">
     </div>
     <nav class="sidebar-nav">
       <a href="/admin/dashboard" class="nav-item <%= page === 'dashboard' ? 'active' : '' %>">
@@ -29,8 +32,8 @@
       <a href="/admin/ganadores" class="nav-item <%= page === 'ganadores' ? 'active' : '' %>">
         <i class="fa-solid fa-trophy"></i> Ganadores
       </a>
-      <a href="/admin/verificar-pin" class="nav-item <%= page === 'verificar' ? 'active' : '' %>">
-        <i class="fa-solid fa-shield-check"></i> Verificar PIN
+      <a href="/admin/usuarios" class="nav-item <%= page === 'usuarios' ? 'active' : '' %>">
+        <i class="fa-solid fa-user-gear"></i> Usuarios
       </a>
       <a href="/admin/configuracion" class="nav-item <%= page === 'config' ? 'active' : '' %>">
         <i class="fa-solid fa-gear"></i> Configuración
@@ -39,30 +42,37 @@
     <div class="sidebar-footer">
       <div class="admin-info">
         <i class="fa-solid fa-circle-user"></i>
-        <span><%= usuario.nombre %></span>
+        <span>
+          <%= usuario.nombre %>
+        </span>
       </div>
+      <a href="/admin/perfil" class="btn-logout" style="margin-bottom:0.5rem;">
+        <i class="fa-solid fa-user-pen"></i> Mi perfil
+      </a>
       <a href="/admin/logout" class="btn-logout">
         <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
       </a>
     </div>
   </aside>
 
- <!-- OVERLAY -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <!-- OVERLAY -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<!-- CONTENIDO -->
-<main class="main-content">
-  <header class="topbar">
-    <div style="display:flex; align-items:center;">
-      <button class="hamburger" id="hamburgerBtn">
-        <span></span><span></span><span></span>
-      </button>
-      <h1 class="page-title"><%= title %></h1>
-    </div>
-    <div class="topbar-right">
-      <span class="badge-rol">
-        <%= usuario.rol === 'admin_owner' ? '👑 Propietario' : '⚙️ Operador' %>
-      </span>
-    </div>
-  </header>
-  <div class="content-body">
+  <!-- CONTENIDO -->
+  <main class="main-content">
+    <header class="topbar">
+      <div style="display:flex; align-items:center;">
+        <button class="hamburger" id="hamburgerBtn">
+          <span></span><span></span><span></span>
+        </button>
+        <h1 class="page-title">
+          <%= title %>
+        </h1>
+      </div>
+      <div class="topbar-right">
+        <span class="badge-rol">
+          <%= usuario.rol==='admin_owner' ? '👑 Propietario' : '⚙️ Operador' %>
+        </span>
+      </div>
+    </header>
+    <div class="content-body">

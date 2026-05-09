@@ -1,60 +1,76 @@
 const UsuarioModel = require('../models/usuarioModel');
 const { verifyPassword, generateToken, hashPassword } = require('../utils/helpers');
+const Logger = require('../utils/logger');
 
 const authController = {
 
   // Login
-  login: async (req, res) => {
-    try {
-      const { email, password } = req.body;
+ login: async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+    }
 
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-      }
+    const usuario = await UsuarioModel.findByEmail(email);
+    if (!usuario) {
+      // Log intento fallido
+      await Logger.registrar({
+        accion: 'LOGIN_FALLIDO',
+        detalle: `Email no encontrado: ${email}`,
+        ip: req.ip
+      });
+      return res.status(401).json({ error: 'Credenciales incorrectas' });
+    }
 
-      // Buscar usuario
-      const usuario = await UsuarioModel.findByEmail(email);
-      if (!usuario) {
-        return res.status(401).json({ error: 'Credenciales incorrectas' });
-      }
+    const passwordValida = await verifyPassword(password, usuario.password_hash);
+    if (!passwordValida) {
+      await Logger.registrar({
+        usuario_id: usuario.id,
+        usuario_email: usuario.email,
+        accion: 'LOGIN_FALLIDO',
+        detalle: 'Contraseña incorrecta',
+        ip: req.ip
+      });
+      return res.status(401).json({ error: 'Credenciales incorrectas' });
+    }
 
-      // Verificar contraseña
-      const passwordValida = await verifyPassword(password, usuario.password_hash);
-      if (!passwordValida) {
-        return res.status(401).json({ error: 'Credenciales incorrectas' });
-      }
+    const token = generateToken({
+      id:     usuario.id,
+      nombre: usuario.nombre,
+      email:  usuario.email,
+      rol:    usuario.rol
+    });
 
-      // Generar token
-      const token = generateToken({
+    // Log login exitoso
+    await Logger.registrar({
+      usuario_id:    usuario.id,
+      usuario_email: usuario.email,
+      accion:        'LOGIN_EXITOSO',
+      ip:            req.ip
+    });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure:   process.env.NODE_ENV === 'production',
+      maxAge:   8 * 60 * 60 * 1000
+    });
+
+    return res.json({
+      ok: true, token,
+      usuario: {
         id:     usuario.id,
         nombre: usuario.nombre,
         email:  usuario.email,
         rol:    usuario.rol
-      });
+      }
+    });
 
-      // Guardar en cookie segura
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure:   process.env.NODE_ENV === 'production',
-        maxAge:   8 * 60 * 60 * 1000 // 8 horas
-      });
-
-      return res.json({
-        ok:      true,
-        token,
-        usuario: {
-          id:     usuario.id,
-          nombre: usuario.nombre,
-          email:  usuario.email,
-          rol:    usuario.rol
-        }
-      });
-
-    } catch (err) {
-      console.error('Error en login:', err);
-      return res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  },
+  } catch (err) {
+    console.error('Error en login:', err);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+},
 
   // Logout
   logout: (req, res) => {

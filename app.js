@@ -14,6 +14,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com", "https://www.google.com"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://www.youtube.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https://api.stripe.com"],
@@ -49,6 +50,12 @@ app.use('/api/sorteos/:sorteoId/boletos', require('./src/routes/boletos'));
 app.use('/api/stripe',  require('./src/routes/stripe'));
 app.use('/api/admin',   require('./src/routes/admin'));
 app.use('/admin',       require('./src/routes/admin'));
+app.use('/',            require('./src/routes/public'));
+
+// ── PÁGINA 404 ──
+app.use((req, res) => {
+  res.status(404).render('public/404');
+});
 
 // ── RUTA DE PRUEBA ──
 app.get('/ping', (req, res) => {
@@ -57,6 +64,8 @@ app.get('/ping', (req, res) => {
 
 // ← Esta siempre debe ir AL ÚLTIMO
 app.use('/',            require('./src/routes/public'));
+
+
 
 // ── MANEJO DE ERRORES ──
 app.use((err, req, res, next) => {

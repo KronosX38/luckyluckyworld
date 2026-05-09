@@ -4,12 +4,52 @@
 
 // Estado del carrito por sorteo
 const carritos = {};
-let sorteoActivo = null;
+let sorteoActivo      = null;
 let precioBoletoActivo = 0;
-let monedaActiva = 'MXN';
+let monedaActiva      = 'MXN';
+
+// Stripe Elements
+let stripeCard = null;
+
+// Inicializar Stripe Elements cuando abre el modal
+function initStripeElements() {
+  if (stripeCard) return; // Ya inicializado
+  const elements = stripe.elements();
+  stripeCard = elements.create('card', {
+    style: {
+      base: {
+        fontFamily: "'Poppins', sans-serif",
+        fontSize: '15px',
+        color: '#0D1B3E',
+        '::placeholder': { color: '#aab0c0' }
+      },
+      invalid: { color: '#C00000' }
+    },
+    hidePostalCode: true
+  });
+  stripeCard.mount('#stripe-card-element');
+  stripeCard.on('change', (e) => {
+    const errEl = document.getElementById('stripe-card-errors');
+    errEl.textContent = e.error ? e.error.message : '';
+  });
+}
+
+// Toggle entre tarjeta y OXXO
+function toggleMetodoPago() {
+  const metodo = document.getElementById('pago-metodo').value;
+  const cardSection = document.getElementById('stripe-card-section');
+  const oxxoSection = document.getElementById('oxxo-section');
+  if (metodo === 'tarjeta') {
+    cardSection.style.display = 'block';
+    oxxoSection.style.display = 'none';
+  } else {
+    cardSection.style.display = 'none';
+    oxxoSection.style.display = 'block';
+  }
+}
 
 // ── CARGAR BOLETOS AL INICIAR ──
-document.querySelectorAll('.pub-boletos-section').forEach(async (section) => {
+document.querySelectorAll('.pub-boletos-section, .pub-boletos-wrap').forEach(async (section) => {
   const sorteoId = section.dataset.sorteo;
   carritos[sorteoId] = [];
   await cargarBoletos(sorteoId);
@@ -23,26 +63,25 @@ async function cargarBoletos(sorteoId) {
 
     const { modo, stats, boletos } = data;
 
-    // Actualizar barra de progreso
-    const total = parseInt(stats.total) || 1;
+    // Barra de progreso
+    const total    = parseInt(stats.total) || 1;
     const vendidos = parseInt(stats.vendidos) || 0;
-    const pct = Math.round((vendidos / total) * 100);
+    const pct      = Math.round((vendidos / total) * 100);
 
-    const fill = document.getElementById(`fill-${sorteoId}`);
-    const pctEl = document.getElementById(`pct-${sorteoId}`);
-    const vendidosEl = document.getElementById(`vendidos-${sorteoId}`);
-    const dispEl = document.getElementById(`disponibles-${sorteoId}`);
+    const fill      = document.getElementById(`fill-${sorteoId}`);
+    const pctEl     = document.getElementById(`pct-${sorteoId}`);
+    const vendEl    = document.getElementById(`vendidos-${sorteoId}`);
+    const dispEl    = document.getElementById(`disponibles-${sorteoId}`);
 
-    if (fill) fill.style.width = `${pct}%`;
-    if (pctEl) pctEl.textContent = `${pct}%`;
-    if (vendidosEl) vendidosEl.textContent = `${vendidos} vendidos`;
-    if (dispEl) dispEl.textContent = `${stats.disponibles} disponibles`;
+    if (fill)   fill.style.width    = `${pct}%`;
+    if (pctEl)  pctEl.textContent   = `${pct}%`;
+    if (vendEl) vendEl.textContent  = `${vendidos} vendidos`;
+    if (dispEl) dispEl.textContent  = `${stats.disponibles} disponibles`;
 
     const cuadricula = document.getElementById(`cuadricula-${sorteoId}`);
     const buscador   = document.getElementById(`buscador-${sorteoId}`);
 
     if (modo === 'cuadricula') {
-      // Mostrar cuadrícula
       cuadricula.innerHTML = '';
       boletos.forEach(b => {
         const el = document.createElement('div');
@@ -55,7 +94,6 @@ async function cargarBoletos(sorteoId) {
         cuadricula.appendChild(el);
       });
     } else {
-      // Mostrar buscador
       cuadricula.innerHTML = '<p style="color:#aaa; font-size:0.85rem; padding:1rem 0;">Escribe un número para buscarlo o usa el botón de número aleatorio.</p>';
       if (buscador) buscador.style.display = 'flex';
     }
@@ -65,13 +103,12 @@ async function cargarBoletos(sorteoId) {
   }
 }
 
-// ── TOGGLE BOLETO EN CUADRÍCULA ──
+// ── TOGGLE BOLETO ──
 function toggleBoleto(sorteoId, numero, el) {
-  const carrito = carritos[sorteoId];
+  const carrito   = carritos[sorteoId];
   const maxCarrito = 20;
 
   if (carrito.includes(numero)) {
-    // Quitar del carrito
     carritos[sorteoId] = carrito.filter(n => n !== numero);
     el.classList.remove('seleccionado');
     el.classList.add('disponible');
@@ -103,16 +140,9 @@ async function agregarAleatorio(sorteoId) {
       alert('Máximo 20 boletos por transacción');
       return;
     }
-
     carritos[sorteoId].push(numero);
-
-    // Marcar en cuadrícula si existe
     const el = document.getElementById(`boleto-${sorteoId}-${numero}`);
-    if (el) {
-      el.classList.remove('disponible');
-      el.classList.add('seleccionado');
-    }
-
+    if (el) { el.classList.remove('disponible'); el.classList.add('seleccionado'); }
     actualizarCarrito(sorteoId);
   } catch (err) {
     console.error(err);
@@ -138,12 +168,10 @@ async function buscarBoleto(sorteoId) {
       alert(`El boleto ${b.numero} está siendo comprado por otra persona`);
     } else {
       if (carritos[sorteoId].includes(b.numero)) {
-        alert('Este boleto ya está en tu carrito');
-        return;
+        alert('Este boleto ya está en tu carrito'); return;
       }
       if (carritos[sorteoId].length >= 20) {
-        alert('Máximo 20 boletos por transacción');
-        return;
+        alert('Máximo 20 boletos por transacción'); return;
       }
       carritos[sorteoId].push(b.numero);
       actualizarCarrito(sorteoId);
@@ -177,10 +205,9 @@ function actualizarCarrito(sorteoId) {
     if (btnPagar) btnPagar.disabled = false;
   }
 
-  // Actualizar total — precio viene del botón data
-  const btnPagarEl = document.getElementById(`btn-pagar-${sorteoId}`);
-  if (btnPagarEl) {
-    const precio = parseFloat(btnPagarEl.getAttribute('onclick').split(',')[1].trim()) || 0;
+  const btnEl = document.getElementById(`btn-pagar-${sorteoId}`);
+  if (btnEl) {
+    const precio = parseFloat(btnEl.getAttribute('onclick').split(',')[1].trim()) || 0;
     const total  = (carrito.length * precio).toFixed(2);
     if (totalEl) totalEl.textContent = `$${Number(total).toLocaleString('es-MX', {minimumFractionDigits:2})}`;
   }
@@ -210,11 +237,10 @@ function procederPago(sorteoId, precio, moneda) {
     alert('Selecciona al menos un boleto');
     return;
   }
-  sorteoActivo      = sorteoId;
+  sorteoActivo       = sorteoId;
   precioBoletoActivo = precio;
-  monedaActiva      = moneda;
+  monedaActiva       = moneda;
 
-  // Mostrar resumen en el modal
   const total = (carritos[sorteoId].length * precio).toFixed(2);
   document.getElementById('pago-resumen').innerHTML = `
     <div style="background:#f9fafb; border-radius:8px; padding:1rem;">
@@ -232,6 +258,9 @@ function procederPago(sorteoId, precio, moneda) {
   `;
 
   document.getElementById('modalPago').classList.add('open');
+
+  // Inicializar Stripe Elements al abrir el modal
+  setTimeout(() => initStripeElements(), 100);
 }
 
 function cerrarModalPago() {
@@ -251,7 +280,7 @@ async function confirmarPago() {
   }
 
   const btn = document.querySelector('.pub-btn-confirmar');
-  btn.textContent = 'Procesando...';
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
   btn.disabled = true;
 
   try {
@@ -260,7 +289,7 @@ async function confirmarPago() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        numeros:  carritos[sorteoActivo],
+        numeros: carritos[sorteoActivo],
         nombre, email, telefono
       })
     });
@@ -268,7 +297,7 @@ async function confirmarPago() {
 
     if (!reserva.ok) {
       alert('❌ ' + (reserva.error || 'Error creando reserva'));
-      btn.textContent = '🔒 Confirmar y pagar';
+      btn.innerHTML = '<i class="fa-solid fa-lock"></i> Confirmar y pagar';
       btn.disabled = false;
       return;
     }
@@ -287,34 +316,117 @@ async function confirmarPago() {
 
     if (!pago.ok) {
       alert('❌ ' + (pago.error || 'Error procesando pago'));
-      btn.textContent = '🔒 Confirmar y pagar';
+      btn.innerHTML = '<i class="fa-solid fa-lock"></i> Confirmar y pagar';
       btn.disabled = false;
       return;
     }
 
-    // 3. Confirmar con Stripe
-    const { error } = await stripe.confirmCardPayment(pago.client_secret, {
-      payment_method: {
-        card: { token: 'tok_visa' }, // En producción usar Stripe Elements
-        billing_details: { name: nombre, email }
-      }
-    });
+    // 3. Confirmar pago con Stripe
+    if (metodo === 'tarjeta') {
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        pago.client_secret,
+        {
+          payment_method: {
+            card: stripeCard,
+            billing_details: { name: nombre, email }
+          }
+        }
+      );
 
-    if (error) {
-      alert('❌ Error en el pago: ' + error.message);
-      btn.textContent = '🔒 Confirmar y pagar';
-      btn.disabled = false;
+      if (error) {
+        document.getElementById('stripe-card-errors').textContent = error.message;
+        btn.innerHTML = '<i class="fa-solid fa-lock"></i> Confirmar y pagar';
+        btn.disabled = false;
+        return;
+      }
+
+      if (paymentIntent.status === 'succeeded') {
+        pagoExitoso();
+      }
+
     } else {
+      // OXXO — mostrar voucher
+      const { error, paymentIntent } = await stripe.confirmOxxoPayment(
+        pago.client_secret,
+        {
+          payment_method: {
+            billing_details: { name: nombre, email }
+          }
+        },
+        { handleActions: false }
+      );
+
+      if (error) {
+        alert('❌ Error: ' + error.message);
+        btn.innerHTML = '<i class="fa-solid fa-lock"></i> Confirmar y pagar';
+        btn.disabled = false;
+        return;
+      }
+
+      // Mostrar instrucciones OXXO
       cerrarModalPago();
+      alert('🏪 Revisa tu correo para ver el voucher de pago OXXO. Tienes 24 horas para pagar.');
       limpiarCarrito(sorteoActivo);
-      await cargarBoletos(sorteoActivo);
-      alert('🎉 ¡Pago exitoso! Revisa tu correo para ver tu(s) PIN(s)');
     }
 
   } catch (err) {
     console.error(err);
     alert('Error de conexión. Intenta de nuevo.');
-    btn.textContent = '🔒 Confirmar y pagar';
+    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Confirmar y pagar';
     btn.disabled = false;
   }
 }
+
+function pagoExitoso() {
+  cerrarModalPago();
+  limpiarCarrito(sorteoActivo);
+  cargarBoletos(sorteoActivo);
+
+  // Mostrar mensaje de éxito
+  const exito = document.createElement('div');
+  exito.style.cssText = `
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:white; padding:2rem 3rem; border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.2); text-align:center; z-index:999;
+  `;
+  exito.innerHTML = `
+    <div style="font-size:3rem; margin-bottom:1rem;">🎉</div>
+    <h3 style="color:#0D1B3E; margin-bottom:0.5rem;">¡Pago exitoso!</h3>
+    <p style="color:#aaa; font-size:0.88rem;">
+      Revisa tu correo electrónico.<br>
+      Ahí encontrarás tu(s) PIN(s) de verificación.
+    </p>
+    <button onclick="this.parentElement.remove()" style="
+      margin-top:1.5rem; background:#3ecf8e; color:white;
+      border:none; padding:0.7rem 2rem; border-radius:8px;
+      font-family:'Poppins',sans-serif; font-size:0.9rem; cursor:pointer;
+    ">Cerrar</button>
+  `;
+  document.body.appendChild(exito);
+}
+
+// ── PROTECCIÓN BÁSICA ──
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+    (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+    (e.ctrlKey && e.key === 'U')
+  ) {
+    e.preventDefault();
+  }
+});
+
+// ── ACTUALIZACIÓN AUTOMÁTICA cada 30 segundos ──
+setInterval(async () => {
+  document.querySelectorAll('.pub-boletos-section, .pub-boletos-wrap').forEach(async (section) => {
+    const sorteoId = section.dataset.sorteo;
+    if (!sorteoId) return;
+
+    // Solo actualizar si no hay boletos seleccionados en el carrito
+    if (carritos[sorteoId] && carritos[sorteoId].length === 0) {
+      await cargarBoletos(sorteoId);
+    }
+  });
+}, 30000); // cada 30 segundos

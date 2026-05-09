@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteos — Lucky Lucky World</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/public.css">
+</head>
+<body>
+
+  <%- include('partials/nav') %>
+
+  <!-- HEADER -->
+  <section class="pub-page-header">
+    <div class="pub-container">
+      <div class="pub-eyebrow">🎟️ Disponibles ahora</div>
+      <h1>Sorteos <span>activos</span></h1>
+      <p>Elige el sorteo que más te emocione y participa hoy mismo</p>
+    </div>
+  </section>
+
+  <!-- SORTEOS -->
+  <section class="pub-section">
+    <div class="pub-container">
+      <% if (sorteos.length === 0) { %>
+        <div class="pub-empty">
+          <div class="pub-empty-icon">🎟️</div>
+          <h3>No hay sorteos activos en este momento</h3>
+          <p>Vuelve pronto — ¡los próximos sorteos se anunciarán aquí!</p>
+        </div>
+      <% } else { %>
+        <div class="pub-sorteos-grid">
+          <% sorteos.forEach(sorteo => { %>
+            <div class="pub-sorteo-card">
+              <div class="pub-card-img">
+                <% if (sorteo.imagen_url) { %>
+                  <img src="<%= sorteo.imagen_url %>" alt="<%= sorteo.nombre %>">
+                <% } else { %>
+                  <div class="pub-card-img-placeholder">
+                    <i class="fa-solid fa-gift"></i>
+                  </div>
+                <% } %>
+                <div class="pub-card-badge">
+                  <i class="fa-solid fa-circle-dot pub-badge-dot"></i> Activo
+                </div>
+              </div>
+              <div class="pub-card-body">
+                <h3 class="pub-card-title"><%= sorteo.nombre %></h3>
+                <% if (sorteo.premio_descripcion) { %>
+                  <div class="pub-card-premio">
+                    <i class="fa-solid fa-trophy"></i>
+                    <%= sorteo.premio_descripcion %>
+                    <% if (sorteo.premio_monto) { %>
+                      — $<%= Number(sorteo.premio_monto).toLocaleString('es-MX') %> <%= sorteo.premio_moneda %>
+                    <% } %>
+                  </div>
+                <% } %>
+                <div class="pub-card-meta">
+                  <div class="pub-card-precio">
+                    <span class="pub-card-precio-label">Por boleto</span>
+                    <span class="pub-card-precio-val">$<%= sorteo.precio_boleto %> <small><%= sorteo.moneda %></small></span>
+                  </div>
+                  <% if (sorteo.fecha_sorteo) { %>
+                    <div class="pub-card-fecha">
+                      <i class="fa-solid fa-calendar-days"></i>
+                      <%= new Date(sorteo.fecha_sorteo).toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'}) %>
+                    </div>
+                  <% } %>
+                </div>
+                <a href="/sorteos/<%= sorteo.id %>" class="pub-card-btn">
+                  Participar ahora <i class="fa-solid fa-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </section>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

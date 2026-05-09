@@ -17,10 +17,11 @@ const SorteoModel = {
   getActivos: async () => {
     const [rows] = await db.execute(
       `SELECT id, nombre, descripcion, boleto_inicio, boleto_fin,
-              precio_boleto, moneda, premio_descripcion, premio_monto,
-              premio_moneda, fecha_sorteo, youtube_link, folio_segob
-       FROM sorteos WHERE estado = 'activo'
-       ORDER BY created_at DESC`
+            precio_boleto, moneda, premio_descripcion, premio_monto,
+            premio_moneda, fecha_sorteo, youtube_link, folio_segob,
+            imagen_url
+     FROM sorteos WHERE estado = 'activo'
+     ORDER BY created_at DESC`
     );
     return rows;
   },
@@ -43,31 +44,31 @@ const SorteoModel = {
   },
 
   // Crear sorteo
-create: async (data) => {
-  const [result] = await db.execute(
-    `INSERT INTO sorteos
+  create: async (data) => {
+    const [result] = await db.execute(
+      `INSERT INTO sorteos
       (nombre, descripcion, boleto_inicio, boleto_fin, precio_boleto,
        moneda, premio_descripcion, premio_monto, premio_moneda,
        fecha_sorteo, youtube_link, folio_segob, estado, created_by)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'borrador', ?)`,
-    [
-      data.nombre,
-      data.descripcion       || null,
-      data.boleto_inicio,
-      data.boleto_fin,
-      data.precio_boleto,
-      data.moneda            || 'MXN',
-      data.premio_descripcion|| null,
-      data.premio_monto      || null,
-      data.premio_moneda     || 'MXN',
-      data.fecha_sorteo      || null,
-      data.youtube_link      || null,
-      data.folio_segob       || null,
-      data.created_by
-    ]
-  );
-  return result.insertId;
-},
+      [
+        data.nombre,
+        data.descripcion || null,
+        data.boleto_inicio,
+        data.boleto_fin,
+        data.precio_boleto,
+        data.moneda || 'MXN',
+        data.premio_descripcion || null,
+        data.premio_monto || null,
+        data.premio_moneda || 'MXN',
+        data.fecha_sorteo || null,
+        data.youtube_link || null,
+        data.folio_segob || null,
+        data.created_by
+      ]
+    );
+    return result.insertId;
+  },
 
   // Activar sorteo
   activar: async (id) => {
@@ -100,6 +101,14 @@ create: async (data) => {
       [id]
     );
     return rows[0].total > 0;
+  },
+
+  // Actualizar imagen del sorteo
+  updateImagen: async (id, imagen_url) => {
+    await db.execute(
+      'UPDATE sorteos SET imagen_url = ? WHERE id = ?',
+      [imagen_url, id]
+    );
   },
 
   // Actualizar YouTube link

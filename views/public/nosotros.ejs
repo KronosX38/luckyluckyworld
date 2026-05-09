@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nosotros — Lucky Lucky World</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/public.css">
+</head>
+<body>
+
+  <%- include('partials/nav') %>
+
+  <!-- HEADER -->
+  <section class="pub-page-header">
+    <div class="pub-container">
+      <div class="pub-eyebrow">🍀 Quiénes somos</div>
+      <h1>Sobre <span>nosotros</span></h1>
+      <p>Conoce la historia detrás de Lucky Lucky World</p>
+    </div>
+  </section>
+
+  <!-- CONTENIDO -->
+  <section class="pub-section">
+    <div class="pub-container">
+      <div class="pub-nosotros-grid">
+
+        <div class="pub-nosotros-content">
+          <div class="pub-eyebrow">Nuestra misión</div>
+          <h2>Sorteos <span>transparentes</span> para todos</h2>
+          <p>En Lucky Lucky World creemos que participar en un sorteo debe ser una experiencia segura, emocionante y completamente transparente. Por eso desarrollamos una plataforma donde cada boleto, cada pago y cada ganador es verificable.</p>
+          <p style="margin-top:1rem;">Operamos bajo permiso SEGOB, procesamos pagos con Stripe — uno de los procesadores más seguros del mundo — y publicamos a todos nuestros ganadores para que puedas verificar que los sorteos son reales.</p>
+
+          <div class="pub-nosotros-valores">
+            <div class="pub-valor">
+              <span class="pub-valor-icon">🔒</span>
+              <div>
+                <strong>Seguridad</strong>
+                <p>Pagos procesados por Stripe con cifrado de extremo a extremo.</p>
+              </div>
+            </div>
+            <div class="pub-valor">
+              <span class="pub-valor-icon">👁️</span>
+              <div>
+                <strong>Transparencia</strong>
+                <p>Ganadores reales y verificables publicados en nuestra página.</p>
+              </div>
+            </div>
+            <div class="pub-valor">
+              <span class="pub-valor-icon">⚡</span>
+              <div>
+                <strong>Rapidez</strong>
+                <p>Tu PIN llega por correo en segundos después de confirmar tu pago.</p>
+              </div>
+            </div>
+            <div class="pub-valor">
+              <span class="pub-valor-icon">🏛️</span>
+              <div>
+                <strong>Legalidad</strong>
+                <p>Operamos con permiso SEGOB vigente conforme a la ley mexicana.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pub-nosotros-aside">
+          <div class="pub-nosotros-card">
+            <div style="font-size:3rem; margin-bottom:1rem;">🍀</div>
+            <h3>¿Tienes dudas?</h3>
+            <p>Estamos aquí para ayudarte. Contáctanos por WhatsApp y te respondemos a la brevedad.</p>
+            <% if (typeof whatsapp !== 'undefined' && whatsapp) { %>
+              <a href="https://wa.me/<%= whatsapp %>" target="_blank" class="pub-card-btn" style="margin-top:1.5rem; display:flex;">
+                <i class="fa-brands fa-whatsapp"></i> Contactar por WhatsApp
+              </a>
+            <% } else { %>
+              <a href="/sorteos" class="pub-card-btn" style="margin-top:1.5rem; display:flex;">
+                Ver sorteos activos <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            <% } %>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

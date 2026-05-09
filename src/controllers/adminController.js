@@ -80,6 +80,11 @@ const adminController = {
       const bruto = stats.vendidos * sorteo.precio_boleto;
       const fee = bruto * 0.036;
 
+      const fmt = (n) => Number(n).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
       res.render('admin/sorteo-detalle', {
         title: `Sorteo: ${sorteo.nombre}`,
         page: 'sorteos',
@@ -87,9 +92,9 @@ const adminController = {
         scripts: '',
         sorteo, stats, boletos,
         ganancias: {
-          bruto: bruto.toFixed(2),
-          fee: fee.toFixed(2),
-          neto: (bruto - fee).toFixed(2)
+          bruto: fmt(bruto),
+          fee: fmt(fee),
+          neto: fmt(bruto - fee)
         }
       });
     } catch (err) {
@@ -103,17 +108,24 @@ const adminController = {
     try {
       const sorteoId = req.query.sorteo;
       let query = `
-        SELECT c.nombre, c.email, c.telefono,
-               COUNT(b.id) as boletos_comprados,
-               GROUP_CONCAT(b.numero ORDER BY b.numero SEPARATOR ', ') as numeros,
-               s.nombre as sorteo_nombre
-        FROM compradores c
-        JOIN boletos b ON b.comprador_id = c.id AND b.estado = 'vendido'
-        JOIN sorteos s ON s.id = b.sorteo_id
-      `;
+  SELECT c.id, c.nombre, c.email, c.telefono,
+         COUNT(b.id) as boletos_comprados,
+         GROUP_CONCAT(b.numero ORDER BY b.numero SEPARATOR ', ') as numeros,
+         s.nombre as sorteo_nombre,
+         t.pin
+  FROM compradores c
+  JOIN boletos b ON b.comprador_id = c.id AND b.estado = 'vendido'
+  JOIN sorteos s ON s.id = b.sorteo_id
+  LEFT JOIN transacciones t ON t.comprador_id = c.id 
+    AND t.sorteo_id = b.sorteo_id
+    AND t.estado = 'completada'
+`;
       const params = [];
-      if (sorteoId) { query += ' WHERE b.sorteo_id = ?'; params.push(sorteoId); }
-      query += ' GROUP BY c.id, s.id ORDER BY boletos_comprados DESC';
+      if (sorteoId) {
+        query += ' WHERE b.sorteo_id = ?';
+        params.push(sorteoId);
+      }
+      query += ' GROUP BY c.id, s.id, t.id ORDER BY boletos_comprados DESC';
 
       const [participantes] = await db.execute(query, params);
       const sorteos = await SorteoModel.getAll();
@@ -135,16 +147,29 @@ const adminController = {
   ganadores: async (req, res) => {
     try {
       const [ganadores] = await db.execute(`
-        SELECT g.*, s.nombre as sorteo_nombre,
-               b.numero as boleto_numero, b.pin,
-               c.nombre as comprador_nombre,
-               c.email, c.telefono
-        FROM ganadores g
-        JOIN sorteos s ON s.id = g.sorteo_id
-        JOIN boletos b ON b.id = g.boleto_id
-        JOIN compradores c ON c.id = g.comprador_id
-        ORDER BY g.created_at DESC
-      `);
+  SELECT g.id, g.sorteo_id, g.boleto_id, g.comprador_id,
+         g.foto_url, g.comprobante_url, g.comprobante_tipo,
+         CAST(g.notificado_email  AS UNSIGNED) AS notificado_email,
+         CAST(g.notificado_wa     AS UNSIGNED) AS notificado_wa,
+         CAST(g.premio_entregado  AS UNSIGNED) AS premio_entregado,
+         CAST(g.visible_publico   AS UNSIGNED) AS visible_publico,
+         CAST(g.pin_verificado    AS UNSIGNED) AS pin_verificado,
+         g.created_at,
+         s.nombre as sorteo_nombre,
+         s.premio_descripcion,
+         b.numero as boleto_numero,
+         t.pin,
+         c.nombre as comprador_nombre,
+         c.email, c.telefono
+  FROM ganadores g
+  JOIN sorteos s ON s.id = g.sorteo_id
+  JOIN boletos b ON b.id = g.boleto_id
+  JOIN compradores c ON c.id = g.comprador_id
+  LEFT JOIN transacciones t ON t.comprador_id = g.comprador_id
+    AND t.sorteo_id = g.sorteo_id
+    AND t.estado = 'completada'
+  ORDER BY g.created_at DESC
+`);
 
       const sorteos = await SorteoModel.getAll();
 

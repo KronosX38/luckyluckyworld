@@ -1,0 +1,232 @@
+<%- include('partials/header') %>
+
+<!-- MODAL CREAR USUARIO -->
+<div class="modal-overlay" id="modalUsuario">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">👤 Nuevo Usuario</span>
+      <button class="modal-close">✕</button>
+    </div>
+    <form id="formUsuario">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre completo</label>
+          <input type="text" name="nombre" class="form-input" required placeholder="Nombre del usuario">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input type="tel" name="telefono" class="form-input" placeholder="Teléfono (opcional)">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" name="email" class="form-input" required placeholder="correo@ejemplo.com">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" name="password" class="form-input" required placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rol</label>
+          <select name="rol" class="form-select" required>
+            <option value="admin_operator">⚙️ Operador</option>
+            <option value="admin_owner">👑 Propietario</option>
+          </select>
+        </div>
+      </div>
+      <div class="alert alert-info" style="font-size:0.78rem;">
+        ℹ️ <strong>Propietario:</strong> acceso total al sistema.<br>
+        ℹ️ <strong>Operador:</strong> puede crear sorteos y ver reportes.
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+        <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-gold">Crear usuario</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div class="modal-overlay" id="modalPassword">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🔑 Cambiar Contraseña</span>
+      <button class="modal-close">✕</button>
+    </div>
+    <input type="hidden" id="pwdUserId">
+    <div class="form-group">
+      <label class="form-label">Nueva contraseña</label>
+      <input type="password" id="newPassword" class="form-input"
+        placeholder="Mínimo 8 caracteres">
+    </div>
+    <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+      <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+      <button class="btn btn-primary" onclick="cambiarPassword()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENCABEZADO -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+  <p style="color:#aaa; font-size:0.85rem;"><%= usuarios.length %> usuario(s) registrado(s)</p>
+  <% if (usuario.rol === 'admin_owner') { %>
+    <button class="btn btn-gold" onclick="openModal('modalUsuario')">
+      <i class="fa-solid fa-plus"></i> Nuevo usuario
+    </button>
+  <% } %>
+</div>
+
+<!-- TABLA -->
+<div class="table-wrap">
+  <div class="table-header">
+    <span class="table-title">👥 Usuarios del sistema</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Teléfono</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Creado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% usuarios.forEach(u => { %>
+        <tr>
+          <td><%= u.id %></td>
+          <td><strong><%= u.nombre %></strong></td>
+          <td><%= u.email %></td>
+          <td><%= u.telefono || '—' %></td>
+          <td>
+            <span class="badge <%= u.rol === 'admin_owner' ? 'badge-vendido' : 'badge-disponible' %>">
+              <%= u.rol === 'admin_owner' ? '👑 Propietario' : '⚙️ Operador' %>
+            </span>
+          </td>
+          <td>
+            <span class="badge <%= u.activo ? 'badge-activo' : 'badge-cancelado' %>">
+              <%= u.activo ? '✅ Activo' : '❌ Inactivo' %>
+            </span>
+          </td>
+          <td><%= new Date(u.created_at).toLocaleDateString('es-MX') %></td>
+          <td>
+            <% if (usuario.rol === 'admin_owner' && u.id !== usuario.id) { %>
+              <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm"
+                  onclick="abrirCambiarPassword(<%= u.id %>)">
+                  🔑
+                </button>
+                <button class="btn <%= u.activo ? 'btn-danger' : 'btn-success' %> btn-sm"
+                  onclick="toggleUsuario(<%= u.id %>, <%= u.activo ? 0 : 1 %>)">
+                  <%= u.activo ? 'Desactivar' : 'Activar' %>
+                </button>
+              </div>
+            <% } else { %>
+              <span style="color:#aaa; font-size:0.78rem;">—</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const token = localStorage.getItem('admin_token');
+
+// Crear usuario
+document.getElementById('formUsuario').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type="submit"]');
+  btn.textContent = 'Creando...';
+  btn.disabled = true;
+
+  const data = Object.fromEntries(new FormData(e.target));
+  const res  = await fetch('/api/admin/api/usuarios', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+
+  if (result.ok) {
+    alert('✅ Usuario creado correctamente');
+    window.location.reload();
+  } else {
+    alert('❌ ' + result.error);
+    btn.textContent = 'Crear usuario';
+    btn.disabled = false;
+  }
+});
+
+// Toggle activo/inactivo
+async function toggleUsuario(id, activo) {
+  const accion = activo ? 'activar' : 'desactivar';
+  if (!confirm(`¿Deseas ${accion} este usuario?`)) return;
+
+  const res = await fetch(`/api/admin/api/usuarios/${id}/toggle`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ activo })
+  });
+  const result = await res.json();
+  if (result.ok) {
+    window.location.reload();
+  } else {
+    alert('❌ ' + result.error);
+  }
+}
+
+// Abrir modal cambiar contraseña
+function abrirCambiarPassword(id) {
+  document.getElementById('pwdUserId').value = id;
+  document.getElementById('newPassword').value = '';
+  openModal('modalPassword');
+}
+
+// Cambiar contraseña
+async function cambiarPassword() {
+  const id       = document.getElementById('pwdUserId').value;
+  const password = document.getElementById('newPassword').value;
+
+  if (!password || password.length < 8) {
+    alert('La contraseña debe tener al menos 8 caracteres');
+    return;
+  }
+
+  const res = await fetch(`/api/admin/api/usuarios/${id}/password`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ password })
+  });
+  const result = await res.json();
+  if (result.ok) {
+    alert('✅ Contraseña actualizada correctamente');
+    closeModal('modalPassword');
+  } else {
+    alert('❌ ' + result.error);
+  }
+}
+
+// Cerrar modales
+document.querySelectorAll('.modal-close').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.closest('.modal-overlay')?.classList.remove('open');
+  });
+});
+</script>
+
+<%- include('partials/footer') %>

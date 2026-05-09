@@ -1,0 +1,19 @@
+<nav class="pub-nav">
+  <div class="pub-nav-inner">
+    <a href="/" class="pub-brand">
+      <img src="/img/logo.svg" alt="Lucky Lucky World" class="pub-nav-logo">
+    </a>
+    <button class="pub-nav-toggle" id="pubNavToggle">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="pub-nav-links" id="pubNavLinks">
+      <li><a href="/" class="<%= page === 'inicio' ? 'active' : '' %>">Inicio</a></li>
+      <li><a href="/sorteos" class="<%= page === 'sorteos' ? 'active' : '' %>">Sorteos</a></li>
+      <li><a href="/ganadores" class="<%= page === 'ganadores' ? 'active' : '' %>">Ganadores</a></li>
+      <li><a href="/nosotros" class="<%= page === 'nosotros' ? 'active' : '' %>">Nosotros</a></li>
+      <% if (typeof folio_segob !== 'undefined' && folio_segob) { %>
+        <li class="pub-segob-nav">SEGOB: <%= folio_segob %></li>
+      <% } %>
+    </ul>
+  </div>
+</nav>

@@ -1,5 +1,6 @@
 const SorteoModel  = require('../models/sorteoModel');
 const db           = require('../config/database');
+const Logger = require('../utils/logger');
 
 const sorteoController = {
 
@@ -70,6 +71,14 @@ const sorteoController = {
         created_by: req.usuario.id
       });
 
+            await Logger.registrar({
+        usuario_id:    req.usuario.id,
+        usuario_email: req.usuario.email,
+        accion:        'SORTEO_CREADO',
+        detalle:       `Sorteo: ${nombre}`,
+        ip:            req.ip
+      });
+
       return res.status(201).json({
         ok: true,
         mensaje: 'Sorteo creado correctamente',
@@ -113,6 +122,13 @@ activar: async (req, res) => {
       sorteo.boleto_inicio,
       sorteo.boleto_fin
     );
+    await Logger.registrar({
+      usuario_id:    req.usuario.id,
+      usuario_email: req.usuario.email,
+      accion:        'SORTEO_ACTIVADO',
+      detalle:       `Sorteo: ${sorteo.nombre}`,
+      ip:            req.ip
+    });
 
     return res.json({
       ok: true,
@@ -134,11 +150,13 @@ activar: async (req, res) => {
       await SorteoModel.cerrar(req.params.id);
 
       // Cancelar boletos reservados o disponibles
-      await db.execute(
-        `UPDATE boletos SET estado = 'cancelado'
-         WHERE sorteo_id = ? AND estado IN ('disponible','reservado')`,
-        [req.params.id]
-      );
+      await Logger.registrar({
+        usuario_id:    req.usuario.id,
+        usuario_email: req.usuario.email,
+        accion:        'SORTEO_CERRADO',
+        detalle:       `Sorteo: ${sorteo.nombre}`,
+        ip:            req.ip
+      });
 
       return res.json({ ok: true, mensaje: 'Sorteo cerrado correctamente' });
     } catch (err) {

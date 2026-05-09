@@ -113,17 +113,24 @@ const BoletoModel = {
   },
 
   // Verificar PIN del ganador
-  verificarPIN: async (sorteoId, pin) => {
-    const [rows] = await db.execute(
-      `SELECT b.numero, b.pin, b.estado,
-              c.nombre, c.email, c.telefono
-       FROM boletos b
-       LEFT JOIN compradores c ON b.comprador_id = c.id
-       WHERE b.sorteo_id = ? AND b.pin = ? AND b.estado = 'vendido'`,
-      [sorteoId, pin]
-    );
-    return rows[0] || null;
-  },
+// Verificar PIN del ganador — ahora busca en transacciones
+verificarPIN: async (sorteoId, pin) => {
+  const [rows] = await db.execute(
+    `SELECT b.numero, t.pin, b.estado,
+            c.nombre, c.email, c.telefono,
+            GROUP_CONCAT(b.numero ORDER BY b.numero SEPARATOR ', ') as todos_boletos
+     FROM transacciones t
+     JOIN reservas r ON r.id = t.reserva_id
+     JOIN boletos b ON b.sorteo_id = t.sorteo_id 
+       AND b.comprador_id = t.comprador_id
+       AND b.estado = 'vendido'
+     JOIN compradores c ON c.id = t.comprador_id
+     WHERE t.sorteo_id = ? AND t.pin = ? AND t.estado = 'completada'
+     GROUP BY t.id, c.id`,
+    [sorteoId, pin.toUpperCase()]
+  );
+  return rows[0] || null;
+},
 
   // Estadísticas de un sorteo para el dashboard
   getStats: async (sorteoId) => {

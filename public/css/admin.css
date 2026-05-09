@@ -2,9 +2,9 @@
    PANEL ADMIN — SORTEOS IMAR
 ═══════════════════════════════════ */
 :root {
-  --navy:    #0D1B3E;
-  --gold:    #C9A84C;
-  --teal:    #5BC8D4;
+  --navy:    #1B4332;  /* Verde oscuro trébol */
+  --gold:    #C9A84C;  /* Dorado */
+  --teal:    #40916C;  /* Verde medio */
   --white:   #FFFFFF;
   --gray:    #8A8FA0;
   --light:   #F7F8FA;
@@ -505,4 +505,16 @@ body.login-body { display: block; }
 
 body.login-body {
   display: block;
+}
+
+/* ── FIXES MÓVIL ── */
+@media (max-width: 430px) {
+  .main-content { width: 100%; overflow-x: hidden; }
+  .content-body { padding: 0.6rem; }
+  table { font-size: 0.72rem; }
+  td, th { padding: 0.5rem 0.6rem; }
+  .cards-grid { gap: 0.6rem; }
+  .card { padding: 1.2rem; }
+  .card-value { font-size: 1.6rem; }
+  .table-wrap { border-radius: 4px; }
 }

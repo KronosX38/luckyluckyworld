@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/admin.css">
 </head>
+
 <body class="login-body">
   <div class="login-page">
 
@@ -14,41 +16,44 @@
 
       <!-- Avatar / Logo -->
       <div class="login-avatar">
-        <div class="avatar-circle">
-          🎟️
-          <!-- Cuando tengan el logo:
-          <img src="/img/logo.png" alt="Lucky Lucky World">
-          -->
+        <div class="avatar-circle" style="background:#1B4332; padding:12px;">
+          <img src="/img/logo.svg" alt="Lucky Lucky World" style="width:100%; height:100%; object-fit:contain;">
         </div>
       </div>
 
       <!-- Título -->
       <div class="login-logo">
-        <h1><span>Lucky Lucky World</span></h1>
         <p>Panel de Administración</p>
       </div>
 
       <!-- Error -->
       <% if (error) { %>
-        <div class="alert alert-danger"><%= error %></div>
-      <% } %>
+        <div class="alert alert-danger">
+          <%= error %>
+        </div>
+        <% } %>
 
-      <!-- Formulario -->
-      <form id="loginForm">
-        <div class="form-group login-field">
-          <span class="field-icon">✉️</span>
-          <input type="email" id="email" class="form-input login-input"
-            placeholder="Correo electrónico" required>
-        </div>
-        <div class="form-group login-field">
-          <span class="field-icon">🔒</span>
-          <input type="password" id="password" class="form-input login-input"
-            placeholder="Contraseña" required>
-        </div>
-        <button type="submit" class="btn-login">
-          Iniciar sesión
-        </button>
-      </form>
+          <!-- Formulario -->
+          <form id="loginForm">
+            <div class="form-group login-field">
+              <span class="field-icon">✉️</span>
+              <input type="email" id="email" class="form-input login-input" placeholder="Correo electrónico" required>
+            </div>
+            <div class="form-group login-field">
+              <span class="field-icon">🔒</span>
+              <input type="password" id="password" class="form-input login-input" placeholder="Contraseña" required>
+            </div>
+
+            <div style="text-align:right; margin-top:-0.5rem; margin-bottom:1rem;">
+              <a href="/admin/recuperar" style="font-size:0.78rem; color:#aaa; text-decoration:none;">
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+
+            <button type="submit" class="btn-login">
+              Iniciar sesión
+            </button>
+          </form>
 
     </div>
   </div>
@@ -64,7 +69,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email:    document.getElementById('email').value,
+          email: document.getElementById('email').value,
           password: document.getElementById('password').value
         })
       });
@@ -87,4 +92,5 @@
     });
   </script>
 </body>
+
 </html>

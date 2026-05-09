@@ -1,0 +1,34 @@
+<footer class="pub-footer">
+  <div class="pub-container">
+    <div class="pub-footer-inner">
+      <div class="pub-footer-brand">
+        <img src="/img/logo.svg" alt="Lucky Lucky World" class="pub-footer-logo">
+        <p>Sorteos en línea transparentes,<br>seguros y emocionantes.</p>
+      </div>
+      <div class="pub-footer-links">
+        <h5>Navegación</h5>
+        <a href="/">Inicio</a>
+        <a href="/sorteos">Sorteos</a>
+        <a href="/ganadores">Ganadores</a>
+        <a href="/nosotros">Nosotros</a>
+      </div>
+      <div class="pub-footer-legal">
+        <h5>Legal</h5>
+        <a href="/terminos">Términos y condiciones</a>
+        <a href="/privacidad">Política de privacidad</a>
+        <% if (typeof folio_segob !== 'undefined' && folio_segob) { %>
+          <p class="pub-footer-segob">Permiso SEGOB:<br><strong><%= folio_segob %></strong></p>
+        <% } %>
+      </div>
+    </div>
+    <div class="pub-footer-copy">
+      © 2026 Lucky Lucky World. Todos los derechos reservados.
+    </div>
+  </div>
+</footer>
+
+<script>
+  const toggle = document.getElementById('pubNavToggle');
+  const links  = document.getElementById('pubNavLinks');
+  if (toggle) toggle.addEventListener('click', () => links.classList.toggle('open'));
+</script>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar contraseña — Lucky Lucky World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+
+<body class="login-body">
+    <div class="login-page">
+        <div class="login-box">
+
+            <div class="login-avatar">
+                <div class="avatar-circle">🔐</div>
+            </div>
+
+            <div class="login-logo">
+                <h1><span>Recuperar acceso</span></h1>
+                <p>Lucky Lucky World</p>
+            </div>
+
+            <!-- PASO 1 — Ingresar correo -->
+            <div id="paso1">
+                <p style="color:#aaa; font-size:0.82rem; text-align:center; margin-bottom:1.5rem;">
+                    Ingresa tu correo y te enviaremos un código de verificación.
+                </p>
+                <div id="error1" class="alert alert-danger" style="display:none;"></div>
+                <div class="login-field">
+                    <span class="field-icon">✉️</span>
+                    <input type="email" id="email" class="form-input login-input" placeholder="Tu correo electrónico">
+                </div>
+                <button class="btn-login" onclick="solicitarCodigo()">
+                    Enviar código
+                </button>
+                <div style="text-align:center; margin-top:1rem;">
+                    <a href="/admin/login" style="font-size:0.78rem; color:#aaa; text-decoration:none;">
+                        ← Volver al login
+                    </a>
+                </div>
+            </div>
+
+            <!-- PASO 2 — Ingresar código -->
+            <div id="paso2" style="display:none;">
+                <p style="color:#aaa; font-size:0.82rem; text-align:center; margin-bottom:1.5rem;">
+                    Ingresa el código de 6 dígitos que enviamos a tu correo.
+                    <br><strong style="color:#0D1B3E;" id="emailMostrado"></strong>
+                </p>
+                <div id="error2" class="alert alert-danger" style="display:none;"></div>
+                <div class="login-field">
+                    <span class="field-icon">🔢</span>
+                    <input type="text" id="codigo" class="form-input login-input" placeholder="Código de 6 dígitos"
+                        maxlength="6" style="letter-spacing:0.3em; text-align:center; font-size:1.2rem;">
+                </div>
+                <button class="btn-login" onclick="verificarCodigo()">
+                    Verificar código
+                </button>
+                <div style="text-align:center; margin-top:1rem;">
+                    <a href="#" onclick="volverPaso1()" style="font-size:0.78rem; color:#aaa; text-decoration:none;">
+                        ← Cambiar correo
+                    </a>
+                </div>
+            </div>
+
+            <!-- PASO 3 — Nueva contraseña -->
+            <div id="paso3" style="display:none;">
+                <p style="color:#aaa; font-size:0.82rem; text-align:center; margin-bottom:1.5rem;">
+                    Crea tu nueva contraseña.
+                </p>
+                <div id="error3" class="alert alert-danger" style="display:none;"></div>
+
+                <!-- Nueva contraseña -->
+                <div style="position:relative; margin-bottom:1.5rem;">
+                    <input type="password" id="pwd1" class="form-input login-input" placeholder="Nueva contraseña"
+                        style="padding-left:1rem; padding-right:2.8rem;"
+                        oninput="evaluarFortaleza(this.value); verificarCoincidencia()">
+                    <button type="button" onclick="toggleVer('pwd1','eye1')" style="position:absolute; right:0px; bottom:8px;
+  background:none; border:none; cursor:pointer; color:#aaa; font-size:0.9rem;">
+                        <i class="fa-solid fa-eye" id="eye1"></i>
+                    </button>
+
+                    <!-- Barras de fortaleza -->
+                    <div style="margin-top:0.5rem;">
+                        <div style="display:flex; gap:4px; margin-bottom:0.3rem;">
+                            <div id="bar1"
+                                style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;">
+                            </div>
+                            <div id="bar2"
+                                style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;">
+                            </div>
+                            <div id="bar3"
+                                style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;">
+                            </div>
+                            <div id="bar4"
+                                style="height:4px; flex:1; border-radius:2px; background:#eee; transition:background 0.3s;">
+                            </div>
+                        </div>
+                        <span id="fortalezaLabel" style="font-size:0.72rem; color:#aaa;"></span>
+                    </div>
+                </div>
+
+                <div style="position:relative; margin-bottom:0.5rem;">
+                    <input type="password" id="pwd2" class="form-input login-input" placeholder="Confirmar contraseña"
+                        style="padding-left:1rem; padding-right:2.8rem;" oninput="verificarCoincidencia()">
+                    <button type="button" onclick="toggleVer('pwd2','eye2')" style="position:absolute; right:0px; bottom:8px;
+  background:none; border:none; cursor:pointer; color:#aaa; font-size:0.9rem;">
+                        <i class="fa-solid fa-eye" id="eye2"></i>
+                    </button>
+                </div>
+
+                <!-- Coincidencia  -->
+                <div id="coincidenciaMsg"
+                    style="font-size:0.75rem; margin-bottom:1rem; text-align:center; min-height:20px;"></div>
+
+                <!-- Requisitos -->
+                <div style="background:#f0f4f8; border-radius:8px; padding:0.8rem 1rem;
+    margin-bottom:1rem; font-size:0.75rem; text-align:left;">
+                    <div id="req1" style="color:#aaa; margin-bottom:3px;">● Mínimo 8 caracteres</div>
+                    <div id="req2" style="color:#aaa; margin-bottom:3px;">● Al menos una mayúscula y una minúscula</div>
+                    <div id="req3" style="color:#aaa; margin-bottom:3px;">● Al menos un número</div>
+                    <div id="req4" style="color:#aaa;">● Al menos un carácter especial (#$%.@¡?!)</div>
+                </div>
+
+                <button class="btn-login" onclick="cambiarPassword()">
+                    Guardar nueva contraseña
+                </button>
+            </div>
+
+            <!-- PASO 4 — Éxito -->
+            <div id="paso4" style="display:none; text-align:center;">
+                <div style="font-size:3rem; margin-bottom:1rem;">✅</div>
+                <h3 style="color:#0D1B3E; margin-bottom:0.5rem;">¡Contraseña actualizada!</h3>
+                <p style="color:#aaa; font-size:0.85rem; margin-bottom:1.5rem;">
+                    Tu contraseña fue cambiada exitosamente.
+                </p>
+                <a href="/admin/login" class="btn-login"
+                    style="display:block; text-decoration:none; text-align:center;">
+                    Iniciar sesión
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let emailGuardado = '';
+        let codigoGuardado = '';
+
+        // ── OJITO ──
+        function toggleVer(inputId, eyeId) {
+            const input = document.getElementById(inputId);
+            const eye = document.getElementById(eyeId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                eye.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        // ── FORTALEZA ──
+        function evaluarFortaleza(pwd) {
+            const bars = ['bar1', 'bar2', 'bar3', 'bar4'];
+            const label = document.getElementById('fortalezaLabel');
+            const reqs = [
+                { id: 'req1', test: pwd.length >= 8 },
+                { id: 'req2', test: /[a-z]/.test(pwd) && /[A-Z]/.test(pwd) },
+                { id: 'req3', test: /\d/.test(pwd) },
+                { id: 'req4', test: /[#$%.@¡?!]/.test(pwd) },
+            ];
+            reqs.forEach(r => {
+                const el = document.getElementById(r.id);
+                if (el) {
+                    el.style.color = r.test ? '#1A7A4A' : '#aaa';
+                    el.textContent = (r.test ? '✅' : '●') + el.textContent.substring(1);
+                }
+            });
+            const score = reqs.filter(r => r.test).length;
+            const colores = ['#eee', '#C00000', '#E8A020', '#3ecf8e', '#1A7A4A'];
+            const labels = ['', '😟 Muy débil', '😐 Débil', '🙂 Media', '💪 Fuerte'];
+            bars.forEach((b, i) => {
+                const el = document.getElementById(b);
+                if (el) el.style.background = i < score ? colores[score] : '#eee';
+            });
+            if (label) {
+                label.textContent = pwd.length > 0 ? labels[score] : '';
+                label.style.color = colores[score];
+            }
+        }
+
+        // ── COINCIDENCIA ──
+        function verificarCoincidencia() {
+            const pwd1 = document.getElementById('pwd1')?.value;
+            const pwd2 = document.getElementById('pwd2')?.value;
+            const msg = document.getElementById('coincidenciaMsg');
+            if (!msg || !pwd2) { if (msg) msg.textContent = ''; return; }
+            if (pwd1 === pwd2) {
+                msg.textContent = '✅ Las contraseñas coinciden';
+                msg.style.color = '#1A7A4A';
+            } else {
+                msg.textContent = '❌ Las contraseñas no coinciden';
+                msg.style.color = '#C00000';
+            }
+        }
+
+        async function solicitarCodigo() {
+            const email = document.getElementById('email').value.trim();
+            const errEl = document.getElementById('error1');
+            const btn = event.target;
+
+            if (!email) { mostrarError(errEl, 'Ingresa tu correo electrónico'); return; }
+
+            btn.textContent = 'Enviando...';
+            btn.disabled = true;
+
+            const res = await fetch('/api/auth/recuperar/solicitar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+
+            btn.textContent = 'Enviar código';
+            btn.disabled = false;
+
+            if (data.ok) {
+                emailGuardado = email;
+                document.getElementById('emailMostrado').textContent = email;
+                document.getElementById('paso1').style.display = 'none';
+                document.getElementById('paso2').style.display = 'block';
+            } else {
+                mostrarError(errEl, data.error);
+            }
+        }
+
+        async function verificarCodigo() {
+            const codigo = document.getElementById('codigo').value.trim();
+            const errEl = document.getElementById('error2');
+            const btn = event.target;
+
+            if (!codigo || codigo.length !== 6) {
+                mostrarError(errEl, 'Ingresa el código de 6 dígitos'); return;
+            }
+
+            btn.textContent = 'Verificando...';
+            btn.disabled = true;
+
+            const res = await fetch('/api/auth/recuperar/verificar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: emailGuardado, codigo })
+            });
+            const data = await res.json();
+
+            btn.textContent = 'Verificar código';
+            btn.disabled = false;
+
+            if (data.ok) {
+                codigoGuardado = codigo;
+                document.getElementById('paso2').style.display = 'none';
+                document.getElementById('paso3').style.display = 'block';
+            } else {
+                mostrarError(errEl, data.error);
+            }
+        }
+
+        async function cambiarPassword() {
+            const pwd1 = document.getElementById('pwd1').value;
+            const pwd2 = document.getElementById('pwd2').value;
+            const errEl = document.getElementById('error3');
+            const btn = event.target;
+
+            if (pwd1 !== pwd2) {
+                mostrarError(errEl, 'Las contraseñas no coinciden'); return;
+            }
+
+            btn.textContent = 'Guardando...';
+            btn.disabled = true;
+
+            const res = await fetch('/api/auth/recuperar/cambiar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: emailGuardado,
+                    codigo: codigoGuardado,
+                    password: pwd1
+                })
+            });
+            const data = await res.json();
+
+            btn.textContent = 'Guardar nueva contraseña';
+            btn.disabled = false;
+
+            if (data.ok) {
+                document.getElementById('paso3').style.display = 'none';
+                document.getElementById('paso4').style.display = 'block';
+            } else {
+                mostrarError(errEl, data.error);
+            }
+        }
+
+        function volverPaso1() {
+            document.getElementById('paso2').style.display = 'none';
+            document.getElementById('paso1').style.display = 'block';
+            document.getElementById('error1').style.display = 'none';
+        }
+
+        function mostrarError(el, msg) {
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+    </script>
+</body>
+
+</html>

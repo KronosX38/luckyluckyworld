@@ -1,9 +1,9 @@
-const StripeService  = require('../services/stripeService');
-const BoletoModel    = require('../models/boletoModel');
-const SorteoModel    = require('../models/sorteoModel');
+const StripeService = require('../services/stripeService');
+const BoletoModel = require('../models/boletoModel');
+const SorteoModel = require('../models/sorteoModel');
 const { generatePIN } = require('../utils/helpers');
-const db             = require('../config/database');
-const EmailService   = require('../services/emailService');
+const db = require('../config/database');
+const EmailService = require('../services/emailService');
 
 const stripeController = {
 
@@ -32,30 +32,22 @@ const stripeController = {
 
       // Obtener sorteo y calcular monto
       const sorteo = await SorteoModel.findById(reserva.sorteo_id);
-      const monto  = sorteo.precio_boleto * numeros.length;
+      const monto = sorteo.precio_boleto * numeros.length;
 
       // Guardar o actualizar comprador
-      const [compExist] = await db.execute(
-        'SELECT id FROM compradores WHERE email = ?', [email]
+      // Siempre crear nuevo comprador por transacción
+      const [comp] = await db.execute(
+        'INSERT INTO compradores (nombre, email, telefono) VALUES (?, ?, ?)',
+        [nombre, email, telefono || null]
       );
-
-      let compradorId;
-      if (compExist.length > 0) {
-        compradorId = compExist[0].id;
-      } else {
-        const [comp] = await db.execute(
-          'INSERT INTO compradores (nombre, email, telefono) VALUES (?, ?, ?)',
-          [nombre, email, telefono || null]
-        );
-        compradorId = comp.insertId;
-      }
+      const compradorId = comp.insertId;
 
       // Metadata para identificar el pago en el webhook
       const metadata = {
-        reserva_id:   String(reserva_id),
-        sorteo_id:    String(reserva.sorteo_id),
+        reserva_id: String(reserva_id),
+        sorteo_id: String(reserva.sorteo_id),
         comprador_id: String(compradorId),
-        numeros:      numeros.join(','),
+        numeros: numeros.join(','),
         nombre,
         email
       };
@@ -79,15 +71,15 @@ const stripeController = {
            monto_bruto, moneda, metodo_pago, estado)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'pendiente')`,
         [reserva_id, compradorId, reserva.sorteo_id,
-         paymentIntent.id, monto, sorteo.moneda, metodo_pago]
+          paymentIntent.id, monto, sorteo.moneda, metodo_pago]
       );
 
       return res.json({
         ok: true,
-        client_secret:    paymentIntent.client_secret,
+        client_secret: paymentIntent.client_secret,
         payment_intent_id: paymentIntent.id,
         monto,
-        moneda:  sorteo.moneda,
+        moneda: sorteo.moneda,
         boletos: numeros
       });
 
@@ -118,29 +110,31 @@ const stripeController = {
       try {
         const numerosArr = numeros.split(',');
 
-        // Generar PIN único para cada boleto
-        const pins = numerosArr.map(n => generatePIN(sorteo_id, n));
+        // Generar UN solo PIN para toda la transacción
+        const pin = generatePIN(pi.id);
 
-        // Confirmar boletos como vendidos
+        // Confirmar boletos como vendidos — todos con el mismo PIN
         await BoletoModel.confirmar(
-          sorteo_id, numerosArr, comprador_id, pins
+          sorteo_id, numerosArr, comprador_id,
+          numerosArr.map(() => pin) // mismo PIN para todos
         );
 
         // Calcular fee de Stripe
         const monto_bruto = pi.amount / 100;
-        const fee_pct     = 3.60;
-        const fee         = monto_bruto * (fee_pct / 100);
-        const neto        = monto_bruto - fee;
+        const fee_pct = 3.60;
+        const fee = monto_bruto * (fee_pct / 100);
+        const neto = monto_bruto - fee;
 
-        // Actualizar transacción
+        // Actualizar transacción con PIN y montos
         await db.execute(
           `UPDATE transacciones SET
-            estado = 'completada',
-            stripe_charge_id = ?,
-            monto_stripe_fee = ?,
-            monto_neto = ?
-           WHERE stripe_payment_id = ?`,
-          [pi.latest_charge, fee.toFixed(2), neto.toFixed(2), pi.id]
+        estado = 'completada',
+        stripe_charge_id = ?,
+        monto_stripe_fee = ?,
+        monto_neto = ?,
+        pin = ?
+       WHERE stripe_payment_id = ?`,
+          [pi.latest_charge, fee.toFixed(2), neto.toFixed(2), pin, pi.id]
         );
 
         // Marcar reserva como completada
@@ -149,20 +143,20 @@ const stripeController = {
           [reserva_id]
         );
 
-        // Enviar correo de confirmación
+        // Enviar correo de confirmación con UN solo PIN
         try {
           await EmailService.enviarConfirmacion({
             nombre, email,
-            boletos:  numerosArr,
-            pins,
+            boletos: numerosArr,
+            pin,      // Un solo PIN
             sorteo_id,
-            monto:    monto_bruto
+            monto: monto_bruto
           });
         } catch (emailErr) {
           console.error('Error enviando correo:', emailErr.message);
         }
 
-        console.log(`✅ Pago confirmado — Boletos: ${numeros} — Comprador: ${nombre}`);
+        console.log(`✅ Pago confirmado — PIN: ${pin} — Boletos: ${numeros} — Comprador: ${nombre}`);
 
       } catch (err) {
         console.error('Error procesando webhook:', err);

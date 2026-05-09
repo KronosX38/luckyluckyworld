@@ -1,7 +1,7 @@
-const BoletoModel   = require('../models/boletoModel');
-const SorteoModel   = require('../models/sorteoModel');
+const BoletoModel = require('../models/boletoModel');
+const SorteoModel = require('../models/sorteoModel');
 const { generatePIN } = require('../utils/helpers');
-const db            = require('../config/database');
+const db = require('../config/database');
 
 const boletoController = {
 
@@ -20,7 +20,7 @@ const boletoController = {
       const limite = parseInt(config[0]?.valor || 500);
 
       const boletos = await BoletoModel.getBySorteo(req.params.sorteoId);
-      const stats   = await BoletoModel.getStats(req.params.sorteoId);
+      const stats = await BoletoModel.getStats(req.params.sorteoId);
 
       return res.json({
         ok: true,
@@ -101,6 +101,23 @@ const boletoController = {
       const sorteo = await SorteoModel.findById(sorteoId);
       if (!sorteo || sorteo.estado !== 'activo') {
         return res.status(400).json({ error: 'El sorteo no está activo' });
+      }
+
+      // Verificar cierre automático de ventas por tiempo
+      if (sorteo.fecha_sorteo) {
+        const [configCierre] = await db.execute(
+          'SELECT valor FROM configuracion WHERE clave = "minutos_cierre_ventas"'
+        );
+        const minutosCierre = parseInt(configCierre[0]?.valor || 15);
+        const ahora = new Date();
+        const fechaSorteo = new Date(sorteo.fecha_sorteo);
+        const diffMin = Math.floor((fechaSorteo - ahora) / 60000);
+
+        if (diffMin <= minutosCierre) {
+          return res.status(400).json({
+            error: `Las ventas cerraron ${minutosCierre} minutos antes del sorteo`
+          });
+        }
       }
 
       // Verificar disponibilidad de todos los boletos
@@ -185,27 +202,27 @@ const boletoController = {
   // Stats del sorteo para el dashboard
   getStats: async (req, res) => {
     try {
-      const stats  = await BoletoModel.getStats(req.params.sorteoId);
+      const stats = await BoletoModel.getStats(req.params.sorteoId);
       const sorteo = await SorteoModel.findById(req.params.sorteoId);
 
       // Calcular ganancias
-      const bruto   = stats.vendidos * sorteo.precio_boleto;
+      const bruto = stats.vendidos * sorteo.precio_boleto;
       const [config] = await db.execute(
         'SELECT valor FROM configuracion WHERE clave = "stripe_fee_pct"'
       );
-      const feePct  = parseFloat(config[0]?.valor || 3.60);
-      const fee     = bruto * (feePct / 100);
-      const neto    = bruto - fee;
+      const feePct = parseFloat(config[0]?.valor || 3.60);
+      const fee = bruto * (feePct / 100);
+      const neto = bruto - fee;
 
       return res.json({
         ok: true,
         stats,
         ganancias: {
-          bruto:    bruto.toFixed(2),
-          fee_pct:  feePct,
-          fee:      fee.toFixed(2),
-          neto:     neto.toFixed(2),
-          moneda:   sorteo.moneda
+          bruto: bruto.toFixed(2),
+          fee_pct: feePct,
+          fee: fee.toFixed(2),
+          neto: neto.toFixed(2),
+          moneda: sorteo.moneda
         }
       });
 

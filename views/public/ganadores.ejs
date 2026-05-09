@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ganadores — Lucky Lucky World</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/public.css">
+</head>
+<body>
+
+  <%- include('partials/nav') %>
+
+  <!-- HEADER -->
+  <section class="pub-page-header">
+    <div class="pub-container">
+      <div class="pub-eyebrow">🏆 Transparencia total</div>
+      <h1>Nuestros <span>ganadores</span></h1>
+      <p>Cada sorteo tiene un ganador real. Aquí los mostramos con orgullo.</p>
+    </div>
+  </section>
+
+  <!-- GANADORES -->
+  <section class="pub-section">
+    <div class="pub-container">
+      <% if (ganadores.length === 0) { %>
+        <div class="pub-empty">
+          <div class="pub-empty-icon">🏆</div>
+          <h3>Aún no hay ganadores publicados</h3>
+          <p>¡Participa en los sorteos activos y sé el primero!</p>
+          <a href="/sorteos" class="pub-btn-primary" style="display:inline-flex; margin-top:1.5rem;">
+            Ver sorteos activos <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      <% } else { %>
+        <div class="pub-ganadores-grid">
+          <% ganadores.forEach(g => { %>
+            <div class="pub-ganador-card">
+              <div class="pub-ganador-foto">
+                <% if (g.foto_url) { %>
+                  <img src="<%= g.foto_url %>" alt="Ganador">
+                <% } else { %>
+                  <div class="pub-ganador-avatar">🏆</div>
+                <% } %>
+              </div>
+              <div class="pub-ganador-info">
+                <div class="pub-ganador-nombre"><%= g.nombre_publico %></div>
+                <div class="pub-ganador-sorteo"><%= g.sorteo_nombre %></div>
+                <div class="pub-ganador-boleto">
+                  Boleto <strong>#<%= g.boleto_numero %></strong>
+                </div>
+                <% if (g.premio_descripcion) { %>
+                  <div class="pub-ganador-premio">
+                    🎁 <%= g.premio_descripcion %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </section>
+
+  <%- include('partials/footer') %>
+</body>
+</html>
