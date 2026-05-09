@@ -143,7 +143,7 @@ const boletoController = {
       const minutos = parseInt(configRes[0]?.valor || 5);
 
       // Crear reserva
-      const expira = new Date(Date.now() + minutos * 60 * 1000);
+      const expira = new Date(Date.now() + minutos * 60 * 1000 + (6 * 60 * 60 * 1000));
       const [result] = await db.execute(
         `INSERT INTO reservas (sorteo_id, boletos_json, email, expira_at)
          VALUES (?, ?, ?, ?)`,
