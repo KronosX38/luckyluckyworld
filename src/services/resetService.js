@@ -17,8 +17,8 @@ const ResetService = {
     const expiraLocal = new Date(expira.getTime() - (expira.getTimezoneOffset() * 60000));
 
     await db.execute(
-      'INSERT INTO password_resets (email, codigo, expira_at) VALUES (?, ?, ?)',
-      [email, codigo, expiraLocal]
+      'INSERT INTO password_resets (email, codigo, expira_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))',
+      [email, codigo]
     );
 
     return codigo;
