@@ -112,13 +112,10 @@ const adminController = {
          COUNT(b.id) as boletos_comprados,
          GROUP_CONCAT(b.numero ORDER BY b.numero SEPARATOR ', ') as numeros,
          s.nombre as sorteo_nombre,
-         t.pin
+         b.pin
   FROM compradores c
   JOIN boletos b ON b.comprador_id = c.id AND b.estado = 'vendido'
   JOIN sorteos s ON s.id = b.sorteo_id
-  LEFT JOIN transacciones t ON t.comprador_id = c.id 
-    AND t.sorteo_id = b.sorteo_id
-    AND t.estado = 'completada'
 `;
       const params = [];
       if (sorteoId) {
