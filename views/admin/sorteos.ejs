@@ -80,6 +80,66 @@
   </div>
 </div>
 
+<!-- MODAL EDITAR SORTEO (solo borrador) -->
+<div class="modal-overlay" id="modalEditar">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Editar Sorteo</span>
+      <button class="modal-close">✕</button>
+    </div>
+    <form id="formEditar">
+      <input type="hidden" id="editId">
+      <div class="alert alert-warning" style="margin-bottom:1.2rem;">
+        ⚠️ Solo puedes editar estos campos mientras el sorteo esté en borrador.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Boleto inicio</label>
+          <input type="number" id="editBoletoInicio" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Boleto fin</label>
+          <input type="number" id="editBoletoFin" class="form-input" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Precio por boleto</label>
+          <input type="number" id="editPrecio" class="form-input" required step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Moneda</label>
+          <select id="editMoneda" class="form-select">
+            <option value="MXN">MXN — Peso mexicano</option>
+            <option value="USD">USD — Dólar americano</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Monto del premio</label>
+          <input type="number" id="editPremioMonto" class="form-input" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Moneda del premio</label>
+          <select id="editPremioMoneda" class="form-select">
+            <option value="MXN">MXN</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link de YouTube Live</label>
+        <input type="text" id="editYoutube" class="form-input" placeholder="https://youtube.com/watch?v=...">
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+        <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-gold">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ENCABEZADO -->
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
   <div>
@@ -137,10 +197,18 @@
             <td><span class="badge badge-<%= s.estado %>"><%= s.estado %></span></td>
             <td>
               <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-                <a href="/admin/sorteos/<%= s.id %>" class="btn btn-outline btn-sm">
+                <a href="/admin/sorteos/<%= s.id %>" class="btn btn-outline btn-sm" title="Ver detalle">
                   <i class="fa-solid fa-eye"></i>
                 </a>
                 <% if (s.estado === 'borrador') { %>
+                  <button class="btn btn-outline btn-sm" title="Editar sorteo"
+                    onclick="abrirEditar(<%= s.id %>, <%= s.boleto_inicio %>, <%= s.boleto_fin %>, <%= s.precio_boleto %>, '<%= s.moneda %>', <%= s.premio_monto || 0 %>, '<%= s.premio_moneda %>', '<%= s.youtube_link || '' %>')">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" title="Eliminar sorteo"
+                    onclick="eliminarSorteo(<%= s.id %>, '<%= s.nombre %>')">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
                   <button class="btn btn-success btn-sm" onclick="activarSorteo(<%= s.id %>)">
                     <i class="fa-solid fa-play"></i> Activar
                   </button>
@@ -162,37 +230,75 @@
 <script>
 const token = localStorage.getItem('admin_token');
 
-// Crear sorteo
+// ── CREAR SORTEO ──
 document.getElementById('formCrear').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = e.target.querySelector('[type="submit"]');
   btn.textContent = 'Creando...';
   btn.disabled = true;
-
-  const formData = new FormData(e.target);
-  const data = Object.fromEntries(formData);
-
+  const data = Object.fromEntries(new FormData(e.target));
   const res = await fetch('/api/sorteos', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(data)
   });
   const result = await res.json();
-
-  if (result.ok) {
-    alert('✅ Sorteo creado correctamente');
-    window.location.reload();
-  } else {
-    alert('❌ ' + result.error);
-    btn.textContent = 'Crear sorteo';
-    btn.disabled = false;
-  }
+  if (result.ok) { alert('✅ Sorteo creado correctamente'); window.location.reload(); }
+  else { alert('❌ ' + result.error); btn.textContent = 'Crear sorteo'; btn.disabled = false; }
 });
 
-// Activar sorteo
+// ── ABRIR MODAL EDITAR ──
+function abrirEditar(id, boletoInicio, boletoFin, precio, moneda, premioMonto, premioMoneda, youtube) {
+  document.getElementById('editId').value          = id;
+  document.getElementById('editBoletoInicio').value = boletoInicio;
+  document.getElementById('editBoletoFin').value    = boletoFin;
+  document.getElementById('editPrecio').value       = precio;
+  document.getElementById('editMoneda').value       = moneda;
+  document.getElementById('editPremioMonto').value  = premioMonto;
+  document.getElementById('editPremioMoneda').value = premioMoneda;
+  document.getElementById('editYoutube').value      = youtube;
+  openModal('modalEditar');
+}
+
+// ── GUARDAR EDICIÓN ──
+document.getElementById('formEditar').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type="submit"]');
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+  const id = document.getElementById('editId').value;
+  const data = {
+    boleto_inicio:  document.getElementById('editBoletoInicio').value,
+    boleto_fin:     document.getElementById('editBoletoFin').value,
+    precio_boleto:  document.getElementById('editPrecio').value,
+    moneda:         document.getElementById('editMoneda').value,
+    premio_monto:   document.getElementById('editPremioMonto').value,
+    premio_moneda:  document.getElementById('editPremioMoneda').value,
+    youtube_link:   document.getElementById('editYoutube').value
+  };
+  const res = await fetch(`/api/sorteos/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if (result.ok) { alert('✅ Sorteo actualizado correctamente'); window.location.reload(); }
+  else { alert('❌ ' + result.error); btn.textContent = 'Guardar cambios'; btn.disabled = false; }
+});
+
+// ── ELIMINAR SORTEO ──
+async function eliminarSorteo(id, nombre) {
+  if (!confirm(`¿Eliminar el sorteo "${nombre}"?\n\nEsta acción no se puede deshacer.`)) return;
+  const res = await fetch(`/api/sorteos/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const result = await res.json();
+  if (result.ok) { alert('✅ Sorteo eliminado'); window.location.reload(); }
+  else alert('❌ ' + result.error);
+}
+
+// ── ACTIVAR SORTEO ──
 async function activarSorteo(id) {
   if (!confirm('¿Activar este sorteo? Se generarán todos los boletos automáticamente.')) return;
   const res = await fetch(`/api/sorteos/${id}/activar`, {
@@ -200,15 +306,11 @@ async function activarSorteo(id) {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   const result = await res.json();
-  if (result.ok) {
-    alert('✅ ' + result.mensaje);
-    window.location.reload();
-  } else {
-    alert('❌ ' + result.error);
-  }
+  if (result.ok) { alert('✅ ' + result.mensaje); window.location.reload(); }
+  else alert('❌ ' + result.error);
 }
 
-// Cerrar sorteo
+// ── CERRAR SORTEO ──
 async function cerrarSorteo(id) {
   if (!confirm('¿Cerrar este sorteo? Los boletos no vendidos quedarán cancelados.')) return;
   const res = await fetch(`/api/sorteos/${id}/cerrar`, {
@@ -216,19 +318,13 @@ async function cerrarSorteo(id) {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   const result = await res.json();
-  if (result.ok) {
-    alert('✅ Sorteo cerrado correctamente');
-    window.location.reload();
-  } else {
-    alert('❌ ' + result.error);
-  }
+  if (result.ok) { alert('✅ Sorteo cerrado correctamente'); window.location.reload(); }
+  else alert('❌ ' + result.error);
 }
 
-// Cerrar modales
+// ── CERRAR MODALES ──
 document.querySelectorAll('.modal-close').forEach(btn => {
-  btn.addEventListener('click', () => {
-    btn.closest('.modal-overlay')?.classList.remove('open');
-  });
+  btn.addEventListener('click', () => btn.closest('.modal-overlay')?.classList.remove('open'));
 });
 </script>
 

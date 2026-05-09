@@ -173,7 +173,78 @@ activar: async (req, res) => {
     } catch (err) {
       return res.status(500).json({ error: 'Error actualizando link' });
     }
+  },
+
+  // Editar sorteo (solo borrador)
+  editar: async (req, res) => {
+    try {
+      const sorteo = await SorteoModel.findById(req.params.id);
+      if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
+      if (sorteo.estado !== 'borrador') {
+        return res.status(400).json({ error: 'Solo se pueden editar sorteos en borrador' });
+      }
+
+      const {
+        boleto_inicio, boleto_fin, precio_boleto,
+        moneda, premio_monto, premio_moneda, youtube_link
+      } = req.body;
+
+      if (parseInt(boleto_inicio) >= parseInt(boleto_fin)) {
+        return res.status(400).json({ error: 'El rango de boletos es inválido' });
+      }
+
+      await db.execute(
+        `UPDATE sorteos SET
+          boleto_inicio = ?, boleto_fin = ?, precio_boleto = ?,
+          moneda = ?, premio_monto = ?, premio_moneda = ?, youtube_link = ?
+        WHERE id = ? AND estado = 'borrador'`,
+        [boleto_inicio, boleto_fin, precio_boleto,
+         moneda, premio_monto, premio_moneda, youtube_link,
+         req.params.id]
+      );
+
+      await Logger.registrar({
+        usuario_id:    req.usuario.id,
+        usuario_email: req.usuario.email,
+        accion:        'SORTEO_EDITADO',
+        detalle:       `Sorteo ID: ${req.params.id}`,
+        ip:            req.ip
+      });
+
+      return res.json({ ok: true, mensaje: 'Sorteo actualizado correctamente' });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error editando sorteo' });
+    }
+  },
+
+  // Eliminar sorteo (solo borrador)
+  eliminar: async (req, res) => {
+    try {
+      const sorteo = await SorteoModel.findById(req.params.id);
+      if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
+      if (sorteo.estado !== 'borrador') {
+        return res.status(400).json({ error: 'Solo se pueden eliminar sorteos en borrador' });
+      }
+
+      await db.execute('DELETE FROM sorteos WHERE id = ? AND estado = "borrador"', [req.params.id]);
+
+      await Logger.registrar({
+        usuario_id:    req.usuario.id,
+        usuario_email: req.usuario.email,
+        accion:        'SORTEO_ELIMINADO',
+        detalle:       `Sorteo: ${sorteo.nombre}`,
+        ip:            req.ip
+      });
+
+      return res.json({ ok: true, mensaje: 'Sorteo eliminado correctamente' });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error eliminando sorteo' });
+    }
   }
 };
+
+
 
 module.exports = sorteoController;
