@@ -8,7 +8,8 @@ const rateLimit = require('express-rate-limit');
 const reservaLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
-  message: { error: 'Demasiadas reservas. Intenta más tarde.' }
+  message: { error: 'Demasiadas reservas. Intenta más tarde.' },
+  validate: { xForwardedForHeader: false }
 });
 
 // Públicas

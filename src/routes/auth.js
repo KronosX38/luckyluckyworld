@@ -12,7 +12,8 @@ const { hashPassword, verifyPassword } = require('../utils/helpers');
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: { error: 'Demasiados intentos. Espera 15 minutos e intenta de nuevo.' }
+  message: { error: 'Demasiados intentos. Espera 15 minutos e intenta de nuevo.' },
+  validate: { xForwardedForHeader: false }
 });
 
 const recuperarLimiter = rateLimit({
