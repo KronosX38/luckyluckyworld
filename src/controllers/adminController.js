@@ -112,7 +112,7 @@ const adminController = {
          COUNT(b.id) as boletos_comprados,
          GROUP_CONCAT(b.numero ORDER BY b.numero SEPARATOR ', ') as numeros,
          s.nombre as sorteo_nombre,
-         b.pin
+         MAX(b.pin) as pin
   FROM compradores c
   JOIN boletos b ON b.comprador_id = c.id AND b.estado = 'vendido'
   JOIN sorteos s ON s.id = b.sorteo_id
@@ -122,7 +122,7 @@ const adminController = {
         query += ' WHERE b.sorteo_id = ?';
         params.push(sorteoId);
       }
-      query += ' GROUP BY c.id, s.id, t.id ORDER BY boletos_comprados DESC';
+      query += ' GROUP BY c.id, s.id ORDER BY boletos_comprados DESC';
 
       const [participantes] = await db.execute(query, params);
       const sorteos = await SorteoModel.getAll();
