@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const db     = require('../config/database');
+const db = require('../config/database');
 
 const ResetService = {
 
@@ -12,12 +12,13 @@ const ResetService = {
     );
 
     // Generar código aleatorio de 6 dígitos
-    const codigo   = Math.floor(100000 + Math.random() * 900000).toString();
-    const expira   = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+    const expira = new Date(Date.now() + 15 * 60 * 1000);
+    const expiraLocal = new Date(expira.getTime() - (expira.getTimezoneOffset() * 60000));
 
     await db.execute(
       'INSERT INTO password_resets (email, codigo, expira_at) VALUES (?, ?, ?)',
-      [email, codigo, expira]
+      [email, codigo, expiraLocal]
     );
 
     return codigo;
