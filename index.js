@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const db = require('./src/config/database');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // ── SEGURIDAD 
 app.use(helmet({
